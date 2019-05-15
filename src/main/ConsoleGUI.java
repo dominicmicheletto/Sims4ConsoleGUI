@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
@@ -688,7 +689,16 @@ public class ConsoleGUI extends javax.swing.JFrame {
             this.jButtonMCCC.setEnabled(true);
             
             ConsoleGUI.settings.mcccSettings.forEach((key, value) -> {
-                System.out.println("Key: " + key + ", value: " + value);
+                var state = initSettingsModel.getState(key) || value;
+                initSettingsModel.setState(key, state);
+                ConsoleGUI.this.initialSettingsHashMap.get(key).setSelected(state);
+            });
+        }
+        if (ConsoleGUI.settings.tmexSettings != null) {
+            this.jCheckBoxTMEX.setSelected(true);
+            this.jButtonTMEX.setEnabled(true);
+            
+            ConsoleGUI.settings.tmexSettings.forEach((key, value) -> {
                 var state = initSettingsModel.getState(key) || value;
                 initSettingsModel.setState(key, state);
                 ConsoleGUI.this.initialSettingsHashMap.get(key).setSelected(state);
@@ -769,6 +779,10 @@ public class ConsoleGUI extends javax.swing.JFrame {
                     if (line == null)
                         return;
                     
+                    if (line.equals("MESSAGE: Request Close")) {
+                        that.closeWindow();
+                    }
+                    
                     if (line.equals("MESSAGE: Ready")) {
                         try {
                             line = that.connData.in.readLine();
@@ -785,16 +799,40 @@ public class ConsoleGUI extends javax.swing.JFrame {
                                     "jCheckBoxMenuItemTestingCheats",
                                     "jCheckBoxMenuItemGamePlayUnlocks",
                                     "jCheckBoxMenuItemHoverEffects",
-                                    "jCheckBoxMenuItemHeadlineEffects"}) {
+                                    "jCheckBoxMenuItemHeadlineEffects",
+                                    "jCheckBoxMenuItemFullEditMode"}) {
                                     ConsoleGUI.settings.mcccSettings.put(key, 
                                             (bitVector & (1 << i)) >> i == 1);
                                     i++;
                                 }
-                                
-                                that.implementSettings();
                             }
                         } catch (NullPointerException | NumberFormatException ex) {
                         }
+                        
+                        try {
+                            line = that.connData.in.readLine();
+                            if (Objects.equals(line, "MESSAGE: INFO: TMEX DETECTED: True")) {
+                                line = that.connData.in.readLine();
+                                line = line.replace("MESSAGE: INFO: ", "");
+                                var bitVector = Integer.parseInt(line);
+                                
+                                ConsoleGUI.settings.tmexSettings = new HashMap<>();
+                                int i = 0;
+                                for (var key : new String[]{
+                                    "jCheckBoxMenuItemMoveObjects",
+                                    "jCheckBoxMenuItemTestingCheats",
+                                    "jCheckBoxMenuItemFullEditMode"
+                                }) {
+                                    ConsoleGUI.settings.tmexSettings.put(key,
+                                            (bitVector & (1 << i)) >> i == 1);
+                                    i++;
+                                }
+                            }
+                        }
+                        catch (NullPointerException | NumberFormatException ex) {
+                        }
+                        
+                        that.implementSettings();
                         
                         that.protocol.currentState =
                                 CommandProtocol.CommandState.CONNECTED_READY;
@@ -1144,13 +1182,14 @@ public class ConsoleGUI extends javax.swing.JFrame {
                 .addContainerGap())
         );
 
+        jDialogAbout.getAccessibleContext().setAccessibleName("About");
+
         java.util.ResourceBundle bundle1 = java.util.ResourceBundle.getBundle("ConsoleGUI"); // NOI18N
         jDialogMCCCSettings.setTitle(bundle1.getString("jDialogMCCCSettings")); // NOI18N
         jDialogMCCCSettings.setAlwaysOnTop(true);
         jDialogMCCCSettings.setModalityType(java.awt.Dialog.ModalityType.APPLICATION_MODAL);
         jDialogMCCCSettings.setName("MCCC Settings"); // NOI18N
         jDialogMCCCSettings.setResizable(false);
-        jDialogMCCCSettings.setType(java.awt.Window.Type.POPUP);
 
         jTableMCCCSettings.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -1190,6 +1229,12 @@ public class ConsoleGUI extends javax.swing.JFrame {
                 .addContainerGap())
         );
 
+        jDialogTMexSettings.setTitle(bundle1.getString("jDialogTMexSettings")); // NOI18N
+        jDialogTMexSettings.setAlwaysOnTop(true);
+        jDialogTMexSettings.setModalityType(java.awt.Dialog.ModalityType.APPLICATION_MODAL);
+        jDialogTMexSettings.setPreferredSize(new java.awt.Dimension(400, 300));
+        jDialogTMexSettings.setResizable(false);
+
         jTableTMexSettings.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
 
@@ -1201,6 +1246,11 @@ public class ConsoleGUI extends javax.swing.JFrame {
         jScrollPane10.setViewportView(jTableTMexSettings);
 
         jButtonTMexSettingsOk.setText(bundle1.getString("jButtonMCCCSettingsOk")); // NOI18N
+        jButtonTMexSettingsOk.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonTMexSettingsOkActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jDialogTMexSettingsLayout = new javax.swing.GroupLayout(jDialogTMexSettings.getContentPane());
         jDialogTMexSettings.getContentPane().setLayout(jDialogTMexSettingsLayout);
@@ -1210,8 +1260,8 @@ public class ConsoleGUI extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(jDialogTMexSettingsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(jButtonTMexSettingsOk, javax.swing.GroupLayout.PREFERRED_SIZE, 69, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jScrollPane10, javax.swing.GroupLayout.PREFERRED_SIZE, 375, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(15, Short.MAX_VALUE))
+                    .addComponent(jScrollPane10, javax.swing.GroupLayout.DEFAULT_SIZE, 375, Short.MAX_VALUE))
+                .addGap(15, 15, 15))
         );
         jDialogTMexSettingsLayout.setVerticalGroup(
             jDialogTMexSettingsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1676,7 +1726,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
                 .addGap(2, 2, 2)
                 .addComponent(jLabelSettingsPreview)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 116, Short.MAX_VALUE)
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 61, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -1964,7 +2014,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
                 .addContainerGap()
                 .addComponent(jLabelSystemTrayMenu)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane6, javax.swing.GroupLayout.DEFAULT_SIZE, 127, Short.MAX_VALUE)
+                .addComponent(jScrollPane6, javax.swing.GroupLayout.DEFAULT_SIZE, 72, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -1987,7 +2037,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
             .addGroup(jPanelSettingsKeyBindingsLayout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jPanelSettingsMenuBindings, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(204, Short.MAX_VALUE))
+                .addContainerGap(149, Short.MAX_VALUE))
             .addGroup(jPanelSettingsKeyBindingsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelSettingsKeyBindingsLayout.createSequentialGroup()
                     .addGap(200, 200, 200)
@@ -2005,7 +2055,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
         );
         jPanelSettingsEditorLayout.setVerticalGroup(
             jPanelSettingsEditorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 304, Short.MAX_VALUE)
+            .addGap(0, 342, Short.MAX_VALUE)
         );
 
         jTabbedPaneSettings.addTab(bundle.getString("jPanelSettingsEditor"), jPanelSettingsEditor); // NOI18N
@@ -2109,7 +2159,6 @@ public class ConsoleGUI extends javax.swing.JFrame {
         jScrollPane8.setViewportView(jListInitialSettings);
 
         jCheckBoxMCCC.setText(bundle1.getString("jCheckBoxMCCC")); // NOI18N
-        jCheckBoxMCCC.setEnabled(false);
 
         jButtonMCCC.setText(bundle1.getString("jButtonMCCC")); // NOI18N
         jButtonMCCC.setEnabled(false);
@@ -2140,11 +2189,20 @@ public class ConsoleGUI extends javax.swing.JFrame {
                 .addContainerGap())
         );
 
+        jCheckBoxMCCC.addActionListener((evt) -> {
+            var state = ConsoleGUI.settings.mcccSettings != null;
+            ((javax.swing.JCheckBox)evt.getSource()).setSelected(state);
+        });
+
         jCheckBoxTMEX.setText(bundle1.getString("jCheckBoxTMEX")); // NOI18N
-        jCheckBoxTMEX.setEnabled(false);
 
         jButtonTMEX.setText(bundle1.getString("jButtonTMEX")); // NOI18N
         jButtonTMEX.setEnabled(false);
+        jButtonTMEX.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonTMEXActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanelTMEXLayout = new javax.swing.GroupLayout(jPanelTMEX);
         jPanelTMEX.setLayout(jPanelTMEXLayout);
@@ -2167,6 +2225,11 @@ public class ConsoleGUI extends javax.swing.JFrame {
                 .addContainerGap())
         );
 
+        jCheckBoxTMEX.addActionListener((evt) -> {
+            var state = ConsoleGUI.settings.tmexSettings != null;
+            ((javax.swing.JCheckBox)evt.getSource()).setSelected(state);
+        });
+
         javax.swing.GroupLayout jPanelInitialSettingsLayout = new javax.swing.GroupLayout(jPanelInitialSettings);
         jPanelInitialSettings.setLayout(jPanelInitialSettingsLayout);
         jPanelInitialSettingsLayout.setHorizontalGroup(
@@ -2186,7 +2249,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanelTMEX, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane8, javax.swing.GroupLayout.DEFAULT_SIZE, 69, Short.MAX_VALUE)
+                .addComponent(jScrollPane8, javax.swing.GroupLayout.DEFAULT_SIZE, 23, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -2406,15 +2469,30 @@ public class ConsoleGUI extends javax.swing.JFrame {
 
         jMenuItemMotherlode.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_M, java.awt.event.InputEvent.SHIFT_MASK | java.awt.event.InputEvent.CTRL_MASK));
         jMenuItemMotherlode.setText(bundle.getString("jMenuItemMotherlode")); // NOI18N
+        jMenuItemMotherlode.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemMotherlodeActionPerformed(evt);
+            }
+        });
         jMenuMoney.add(jMenuItemMotherlode);
 
         jMenuItemRosebud.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_R, java.awt.event.InputEvent.SHIFT_MASK | java.awt.event.InputEvent.CTRL_MASK));
         jMenuItemRosebud.setText(bundle.getString("jMenuItemRosebud")); // NOI18N
+        jMenuItemRosebud.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemRosebudActionPerformed(evt);
+            }
+        });
         jMenuMoney.add(jMenuItemRosebud);
         jMenuMoney.add(jSeparator14);
 
         jMenuItemClearMoney.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_0, java.awt.event.InputEvent.CTRL_MASK));
         jMenuItemClearMoney.setText("Clear Money");
+        jMenuItemClearMoney.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemClearMoneyActionPerformed(evt);
+            }
+        });
         jMenuMoney.add(jMenuItemClearMoney);
 
         jMenuItemSetMoney.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_4, java.awt.event.InputEvent.SHIFT_MASK | java.awt.event.InputEvent.CTRL_MASK));
@@ -2459,6 +2537,11 @@ public class ConsoleGUI extends javax.swing.JFrame {
         jMenuBuildBuy.setText(bundle.getString("jMenuBuildBuy")); // NOI18N
 
         jMenuItemEnableFreeBuild.setText(bundle.getString("jMenuItemEnableFreeBuild")); // NOI18N
+        jMenuItemEnableFreeBuild.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemEnableFreeBuildActionPerformed(evt);
+            }
+        });
         jMenuBuildBuy.add(jMenuItemEnableFreeBuild);
 
         jMenuCheats.add(jMenuBuildBuy);
@@ -3256,6 +3339,33 @@ public class ConsoleGUI extends javax.swing.JFrame {
     }//GEN-LAST:event_jListInitialSettingsMouseClicked
 
     private void jButtonMCCCActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonMCCCActionPerformed
+        this.jTableMCCCSettings.setModel(new javax.swing.table.DefaultTableModel() {
+            {
+                var bundle = java.util.ResourceBundle.getBundle("ConsoleGUI");
+                this.columnIdentifiers.add(bundle.getString("jDialogMCCCSettingsTableSettingColumn"));
+                this.columnIdentifiers.add(bundle.getString("jDialogMCCCSettingsTableValueColumn"));
+                
+                ConsoleGUI.settings.mcccSettings.forEach((var key, var value) -> {
+                    var values = new java.util.Vector();
+                    values.add(ConsoleGUI.this.initialSettingsHashMap.get(key).getText());
+                    values.add(value);
+                    this.dataVector.add(values);
+                });
+            }
+            
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+            
+            @Override
+            public Class getColumnClass(int c) {
+                return getValueAt(0, c).getClass();
+            }
+            
+        });
+        
+        this.jDialogMCCCSettings.pack();
         this.jDialogMCCCSettings.setVisible(true);
         this.jButtonMCCCSettingsOk.requestFocus();
     }//GEN-LAST:event_jButtonMCCCActionPerformed
@@ -3263,6 +3373,58 @@ public class ConsoleGUI extends javax.swing.JFrame {
     private void jButtonMCCCSettingsOkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonMCCCSettingsOkActionPerformed
         this.jDialogMCCCSettings.setVisible(false);
     }//GEN-LAST:event_jButtonMCCCSettingsOkActionPerformed
+
+    private void jMenuItemMotherlodeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemMotherlodeActionPerformed
+        this.executeCommand("motherlode");
+    }//GEN-LAST:event_jMenuItemMotherlodeActionPerformed
+
+    private void jMenuItemRosebudActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemRosebudActionPerformed
+        this.executeCommand("rosebud");
+    }//GEN-LAST:event_jMenuItemRosebudActionPerformed
+
+    private void jMenuItemClearMoneyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemClearMoneyActionPerformed
+        this.executeCommand("money 0");
+    }//GEN-LAST:event_jMenuItemClearMoneyActionPerformed
+
+    private void jMenuItemEnableFreeBuildActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemEnableFreeBuildActionPerformed
+        this.executeCommand("freebuild");
+    }//GEN-LAST:event_jMenuItemEnableFreeBuildActionPerformed
+
+    private void jButtonTMexSettingsOkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonTMexSettingsOkActionPerformed
+        this.jDialogTMexSettings.setVisible(false);
+    }//GEN-LAST:event_jButtonTMexSettingsOkActionPerformed
+
+    private void jButtonTMEXActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonTMEXActionPerformed
+        this.jTableTMexSettings.setModel(new javax.swing.table.DefaultTableModel() {
+            {
+                var bundle = java.util.ResourceBundle.getBundle("ConsoleGUI");
+                this.columnIdentifiers.add(bundle.getString("jDialogTMexSettingsTableSettingColumn"));
+                this.columnIdentifiers.add(bundle.getString("jDialogTMexSettingsTableValueColumn"));
+                
+                ConsoleGUI.settings.tmexSettings.forEach((var key, var value) -> {
+                    var values = new java.util.Vector();
+                    values.add(ConsoleGUI.this.initialSettingsHashMap.get(key).getText());
+                    values.add(value);
+                    this.dataVector.add(values);
+                });
+            }
+            
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+            
+            @Override
+            public Class getColumnClass(int c) {
+                return getValueAt(0, c).getClass();
+            }
+            
+        });
+        
+        this.jDialogTMexSettings.pack();
+        this.jDialogTMexSettings.setVisible(true);
+        this.jButtonTMexSettingsOk.requestFocus();
+    }//GEN-LAST:event_jButtonTMEXActionPerformed
 
     private void jListSystemTrayMenuMouseClicked(java.awt.event.MouseEvent evt) {
         var list = (javax.swing.JList<CheckListItem>) evt.getSource();

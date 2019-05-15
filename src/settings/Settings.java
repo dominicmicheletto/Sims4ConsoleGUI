@@ -36,6 +36,7 @@ public class Settings implements Serializable, Cloneable {
 
     public transient boolean isInValidState;
     public transient HashMap<String, Boolean> mcccSettings;
+    public transient HashMap<String, Boolean> tmexSettings;
 
     private static final long VERSION_OFFSET = 1;
     private static final long serialVersionUID = -8308417833864101145L + VERSION_OFFSET;
@@ -129,6 +130,7 @@ public class Settings implements Serializable, Cloneable {
     public Settings() {
         this.isInValidState = true;
         this.mcccSettings = null;
+        this.tmexSettings = null;
 
         this.fontName = "DejaVu Sans Mono";
         this.fontSize = 10f;
@@ -155,6 +157,7 @@ public class Settings implements Serializable, Cloneable {
             HashSet<String> quickCheats, HashMap<String, Boolean> initialSettings) {
         this.isInValidState = true;
         this.mcccSettings = null;
+        this.tmexSettings = null;
 
         this.fontName = fontName;
         this.fontSize = fontSize;
@@ -180,6 +183,8 @@ public class Settings implements Serializable, Cloneable {
         
         if (this.mcccSettings != null)
             clone.mcccSettings = (HashMap<String, Boolean>) this.mcccSettings.clone();
+        if (this.tmexSettings != null)
+            clone.tmexSettings = (HashMap<String, Boolean>) this.tmexSettings.clone();
 
         return clone;
     }
