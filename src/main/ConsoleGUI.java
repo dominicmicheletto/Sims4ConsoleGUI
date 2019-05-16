@@ -27,10 +27,10 @@ import java.util.Objects;
 import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
+import javax.imageio.ImageIO;
 
 /**
  * ConsoleGUI Java GUI application which provides an interface between the Sims
@@ -269,13 +269,19 @@ public class ConsoleGUI extends javax.swing.JFrame {
     }
 
     private static java.awt.Image createImage(String path, String description) {
-        var imageURL = ConsoleGUI.class.getResource(path);
+        var imageURLStream = ConsoleGUI.class.getResourceAsStream(path);
 
-        if (imageURL == null) {
+        if (imageURLStream == null) {
             System.err.println("Resource not found: " + path);
             return null;
         } else {
-            return (new javax.swing.ImageIcon(imageURL, description)).getImage();
+            try {
+                var imageURL = ImageIO.read(imageURLStream);
+                return (new javax.swing.ImageIcon(imageURL, description)).getImage();
+            }
+            catch (IOException ex) {
+                return null;
+            }
         }
     }
 
@@ -354,80 +360,93 @@ public class ConsoleGUI extends javax.swing.JFrame {
             return null;
         }
 
-        var tray = java.awt.SystemTray.getSystemTray();
-        var icon = ConsoleGUI.createImage("../images/Computer3.png", "tray icon")
-                .getScaledInstance(16, 16, java.awt.Image.SCALE_SMOOTH);
-        var _trayIcon = new java.awt.TrayIcon(icon);
-
-        var popupMenu = new java.awt.PopupMenu();
-
-        popupMenu.add(new java.util.function.Supplier<java.awt.MenuItem>() {
-            @Override
-            public java.awt.MenuItem get() {
-                var menuItem = new java.awt.MenuItem();
-
-                menuItem.setLabel(bundle.getString("jMenuItemAbout"));
-                menuItem.addActionListener((var listener) -> {
-                    ConsoleGUI.this.requestFocus();
-                    java.util.Arrays.asList(
-                            ConsoleGUI.this.jMenuItemAbout.getActionListeners())
-                            .forEach((var action) -> action.actionPerformed(listener));
-                });
-
-                return menuItem;
-            }
-        }.get());
-        popupMenu.add(new java.util.function.Supplier<java.awt.MenuItem>() {
-            @Override
-            public java.awt.MenuItem get() {
-                var menuItem = new java.awt.MenuItem();
-
-                menuItem.setLabel(bundle.getString("jMenuItemOptions"));
-                menuItem.addActionListener((var listener) -> {
-                    ConsoleGUI.this.requestFocus();
-                    ConsoleGUI.this.openSettingsWindow();
-                });
-
-                return menuItem;
-            }
-        }.get());
-        popupMenu.add(new java.util.function.Supplier<java.awt.MenuItem>() {
-            @Override
-            public java.awt.MenuItem get() {
-                var menu = new java.awt.Menu();
-
-                menu.setLabel(bundle.getString("jMenuCheats"));
-                ConsoleGUI.this.jMenuCheats.addPropertyChangeListener("enabled", (var listener)
-                        -> menu.setEnabled((Boolean) listener.getNewValue()));
-                ConsoleGUI.this.quickCheatsMenu = new SystemTrayQuickCheatsMenu(menu);
-                ConsoleGUI.this.quickCheatsMenu.update();
-
-                return menu;
-            }
-        }.get());
-        popupMenu.addSeparator();
-        popupMenu.add(new java.util.function.Supplier<java.awt.MenuItem>() {
-            @Override
-            public java.awt.MenuItem get() {
-                var menuItem = new java.awt.MenuItem();
-
-                menuItem.setLabel(String.format(bundle.getString("TrayMenuItemExit"),
-                        ConsoleGUI.this.getTitle()));
-                menuItem.addActionListener((var listener) -> {
-                    ConsoleGUI.this.requestFocus();
-                    ConsoleGUI.this.closeWindow();
-                });
-
-                return menuItem;
-            }
-        }.get());
-
-        _trayIcon.setPopupMenu(popupMenu);
-
         try {
-            tray.add(_trayIcon);
-            return _trayIcon;
-        } catch (java.awt.AWTException ex) {
+            var tray = java.awt.SystemTray.getSystemTray();
+            var icon = ConsoleGUI.createImage("../images/Computer3.png", "tray icon")
+                    .getScaledInstance(16, 16, java.awt.Image.SCALE_SMOOTH);
+        
+            var _trayIcon = new java.awt.TrayIcon(icon);
+
+            var popupMenu = new java.awt.PopupMenu();
+
+            popupMenu.add(new java.util.function.Supplier<java.awt.MenuItem>() {
+                @Override
+                public java.awt.MenuItem get() {
+                    var menuItem = new java.awt.MenuItem();
+
+                    menuItem.setLabel(bundle.getString("jMenuItemAbout"));
+                    menuItem.addActionListener((var listener) -> {
+                        ConsoleGUI.this.requestFocus();
+                        java.util.Arrays.asList(
+                                ConsoleGUI.this.jMenuItemAbout.getActionListeners())
+                                .forEach((var action) -> action.actionPerformed(listener));
+                    });
+
+                    return menuItem;
+                }
+            }.get());
+            popupMenu.add(new java.util.function.Supplier<java.awt.MenuItem>() {
+                @Override
+                public java.awt.MenuItem get() {
+                    var menuItem = new java.awt.MenuItem();
+
+                    menuItem.setLabel(bundle.getString("jMenuItemOptions"));
+                    menuItem.addActionListener((var listener) -> {
+                        ConsoleGUI.this.requestFocus();
+                        ConsoleGUI.this.openSettingsWindow();
+                    });
+
+                    return menuItem;
+                }
+            }.get());
+            popupMenu.add(new java.util.function.Supplier<java.awt.MenuItem>() {
+                @Override
+                public java.awt.MenuItem get() {
+                    var menu = new java.awt.Menu();
+
+                    menu.setLabel(bundle.getString("jMenuCheats"));
+                    ConsoleGUI.this.jMenuCheats.addPropertyChangeListener("enabled", (var listener)
+                            -> menu.setEnabled((Boolean) listener.getNewValue()));
+                    ConsoleGUI.this.quickCheatsMenu = new SystemTrayQuickCheatsMenu(menu);
+                    ConsoleGUI.this.quickCheatsMenu.update();
+
+                    return menu;
+                }
+            }.get());
+            popupMenu.addSeparator();
+            popupMenu.add(new java.util.function.Supplier<java.awt.MenuItem>() {
+                @Override
+                public java.awt.MenuItem get() {
+                    var menuItem = new java.awt.MenuItem();
+
+                    menuItem.setLabel(String.format(bundle.getString("TrayMenuItemExit"),
+                            ConsoleGUI.this.getTitle()));
+                    menuItem.addActionListener((var listener) -> {
+                        ConsoleGUI.this.requestFocus();
+                        ConsoleGUI.this.closeWindow();
+                    });
+
+                    return menuItem;
+                }
+            }.get());
+
+            _trayIcon.setPopupMenu(popupMenu);
+
+            try {
+                tray.add(_trayIcon);
+                return _trayIcon;
+            } catch (java.awt.AWTException ex) {
+                return null;
+            }
+        }
+        catch (NullPointerException ex) {
+            this.jPanelSystemTrayMenu.setEnabled(false);
+            this.jLabelSystemTrayMenu.setEnabled(false);
+            this.jListSystemTrayMenu.setEnabled(false);
+
+            this.jPanelSystemTrayMenu.setToolTipText(bundle.getString("NoSystemTray"));
+            this.jListSystemTrayMenu.setToolTipText(bundle.getString("NoSystemTray"));
+
             return null;
         }
     }
@@ -690,7 +709,6 @@ public class ConsoleGUI extends javax.swing.JFrame {
             
             ConsoleGUI.settings.mcccSettings.forEach((key, value) -> {
                 var state = initSettingsModel.getState(key) || value;
-                initSettingsModel.setState(key, state);
                 ConsoleGUI.this.initialSettingsHashMap.get(key).setSelected(state);
             });
         }
@@ -700,11 +718,9 @@ public class ConsoleGUI extends javax.swing.JFrame {
             
             ConsoleGUI.settings.tmexSettings.forEach((key, value) -> {
                 var state = initSettingsModel.getState(key) || value;
-                initSettingsModel.setState(key, state);
                 ConsoleGUI.this.initialSettingsHashMap.get(key).setSelected(state);
             });
         }
-        this.jListInitialSettings.repaint();
         
     }
 
@@ -768,11 +784,13 @@ public class ConsoleGUI extends javax.swing.JFrame {
             this.waitForReady();
     }
     
+    private HashMap<String, Long> simsNameToIdMap = new HashMap<>();
     private void waitForReady() {
         ((Runnable) new Runnable() {
             @Override
             public void run() {
                 var that = ConsoleGUI.this;
+                var bundle = java.util.ResourceBundle.getBundle("ConsoleGUI");
                 
                 try {
                     var line = that.connData.in.readLine();
@@ -784,6 +802,50 @@ public class ConsoleGUI extends javax.swing.JFrame {
                     }
                     
                     if (line.equals("MESSAGE: Ready")) {
+                        try {
+                            that.jSeparator1.setVisible(true);
+                            that.jProgressBarStatus.setVisible(true);
+                            that.jProgressBarStatus.setIndeterminate(false);
+                            that.jProgressBarStatus.setValue(0);
+                            that.jLabelCommandStatus.setText(
+                            bundle.getString("jLabelCommandStatusQuerying"));
+                            that.protocol.currentState = CommandProtocol.CommandState.CONNECTED_QUERY_DONE;
+                            
+                            line = that.connData.in.readLine();
+                            if (line != null && line.startsWith("MESSAGE: INFO: SIMS LIST: ")) {
+                                var amount = Integer.parseInt(
+                                        line.replace("MESSAGE: INFO: SIMS LIST: ", ""));
+                                
+                                that.jProgressBarStatus.setMaximum(amount);
+                                
+                                for (int i = 1; i <= amount; i++) {
+                                    line = that.connData.in.readLine();
+                                    line = line.replace("MESSAGE: INFO: SIM: ", "");
+                                    
+                                    if (ConsoleGUI.DEBUG_MODE)
+                                        System.out.println(i + ": " + line);
+                                    
+                                    var data = line.split("\0");
+                                    var name = data[0];
+                                    var id = Long.parseLong(data[1]);
+                                    var species = Boolean.getBoolean(data[2]);
+                                    
+                                    that.simsNameToIdMap.put(name, id);
+                                    that.jProgressBarStatus.setValue(i);
+                                }
+                            }
+                        }
+                        catch (NullPointerException | NumberFormatException ex) {
+                        }
+                        finally {
+                            that.jSeparator1.setVisible(false);
+                            that.jProgressBarStatus.setVisible(false);
+                            that.jProgressBarStatus.setIndeterminate(true);
+                            that.jLabelCommandStatus.setText(
+                            bundle.getString("jLabelCommandStatusDone"));
+                            that.protocol.currentState = CommandProtocol.CommandState.CONNECTED_QUERY_DONE;
+                        }
+                        
                         try {
                             line = that.connData.in.readLine();
                             if (Objects.equals(line, "MESSAGE: INFO: MCCC DETECTED: True")) {
@@ -929,14 +991,37 @@ public class ConsoleGUI extends javax.swing.JFrame {
         jScrollPane7 = new javax.swing.JScrollPane();
         jEditorPaneAbout = new javax.swing.JEditorPane();
         jButtonAboutClose = new javax.swing.JButton();
-        jDialogMCCCSettings = new javax.swing.JDialog();
+        jDialogMCCCSettings = new javax.swing.JDialog(this);
         jScrollPane9 = new javax.swing.JScrollPane();
         jTableMCCCSettings = new javax.swing.JTable();
         jButtonMCCCSettingsOk = new javax.swing.JButton();
-        jDialogTMexSettings = new javax.swing.JDialog();
+        jDialogTMexSettings = new javax.swing.JDialog(this);
         jScrollPane10 = new javax.swing.JScrollPane();
         jTableTMexSettings = new javax.swing.JTable();
         jButtonTMexSettingsOk = new javax.swing.JButton();
+        jDialogMoneyChooser = new javax.swing.JDialog();
+        jPanelMoneyChooser = new javax.swing.JPanel();
+        jLabelMoneyChooserAmount = new javax.swing.JLabel();
+        jSpinnerMoneyChooser = new javax.swing.JSpinner();
+        jPanelMoneyChooserButtons = new javax.swing.JPanel();
+        jButtonMoneyChooserOk = new javax.swing.JButton();
+        jButtonMoneyChooserCancel = new javax.swing.JButton();
+        jLabelMoneyChooserDescription = new javax.swing.JLabel();
+        jDialogEditRelationship = new javax.swing.JDialog();
+        jPanelRelationshipSimChooser = new javax.swing.JPanel();
+        jLabelRelationshipMainSim = new javax.swing.JLabel();
+        jComboBoxRelationshipMainSim = new javax.swing.JComboBox<>();
+        jLabelRelationshipSecondarySim = new javax.swing.JLabel();
+        jComboBoxRelationshipSecondarySim = new javax.swing.JComboBox<>();
+        jPanelRelationshipRelationshipType = new javax.swing.JPanel();
+        jRadioButtonRelationshipFriendly = new javax.swing.JRadioButton();
+        jRadioButtonRelationshipRomantic = new javax.swing.JRadioButton();
+        jPanelRelationshipRelationshipValue = new javax.swing.JPanel();
+        jSliderRelationshipRelationshipValue = new javax.swing.JSlider();
+        jPanelRelationshipButtons = new javax.swing.JPanel();
+        jButtonRelationshipOk = new javax.swing.JButton();
+        jButtonRelationshipCancel = new javax.swing.JButton();
+        buttonGroupRelationship = new javax.swing.ButtonGroup();
         jToolBarCheatsBar = new javax.swing.JToolBar();
         jToggleButtonCheatsConsole = new javax.swing.JToggleButton();
         jToggleButtonCheatsExplorer = new javax.swing.JToggleButton();
@@ -950,8 +1035,8 @@ public class ConsoleGUI extends javax.swing.JFrame {
         jSeparator3 = new javax.swing.JToolBar.Separator();
         jPanelCommandStatus = new javax.swing.JPanel();
         filler9 = new javax.swing.Box.Filler(new java.awt.Dimension(10, 0), new java.awt.Dimension(10, 0), new java.awt.Dimension(10, 32767));
-        jLabelCommandStatus = new javax.swing.JLabel();
         filler10 = new javax.swing.Box.Filler(new java.awt.Dimension(10, 0), new java.awt.Dimension(10, 0), new java.awt.Dimension(10, 32767));
+        jLabelCommandStatus = new javax.swing.JLabel();
         jSeparator1 = new javax.swing.JToolBar.Separator();
         filler5 = new javax.swing.Box.Filler(new java.awt.Dimension(10, 0), new java.awt.Dimension(10, 0), new java.awt.Dimension(10, 32767));
         jProgressBarStatus = new javax.swing.JProgressBar();
@@ -1008,6 +1093,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
         jLabelSystemTrayMenu = new javax.swing.JLabel();
         jScrollPane6 = new javax.swing.JScrollPane();
         jListSystemTrayMenu = new javax.swing.JList<>();
+        jPanelToolbar = new javax.swing.JPanel();
         jPanelSettingsEditor = new javax.swing.JPanel();
         jPanelSettingsMiscellaneous = new javax.swing.JPanel();
         jPanelSettingsGeneral = new javax.swing.JPanel();
@@ -1184,6 +1270,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
 
         jDialogAbout.getAccessibleContext().setAccessibleName("About");
 
+        jDialogMCCCSettings.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         java.util.ResourceBundle bundle1 = java.util.ResourceBundle.getBundle("ConsoleGUI"); // NOI18N
         jDialogMCCCSettings.setTitle(bundle1.getString("jDialogMCCCSettings")); // NOI18N
         jDialogMCCCSettings.setAlwaysOnTop(true);
@@ -1199,6 +1286,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
 
             }
         ));
+        jTableMCCCSettings.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_INTERVAL_SELECTION);
         jScrollPane9.setViewportView(jTableMCCCSettings);
 
         jButtonMCCCSettingsOk.setText(bundle1.getString("jButtonMCCCSettingsOk")); // NOI18N
@@ -1229,10 +1317,11 @@ public class ConsoleGUI extends javax.swing.JFrame {
                 .addContainerGap())
         );
 
+        jDialogTMexSettings.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         jDialogTMexSettings.setTitle(bundle1.getString("jDialogTMexSettings")); // NOI18N
         jDialogTMexSettings.setAlwaysOnTop(true);
         jDialogTMexSettings.setModalityType(java.awt.Dialog.ModalityType.APPLICATION_MODAL);
-        jDialogTMexSettings.setPreferredSize(new java.awt.Dimension(400, 300));
+        jDialogTMexSettings.setName("TMex Settings"); // NOI18N
         jDialogTMexSettings.setResizable(false);
 
         jTableTMexSettings.setModel(new javax.swing.table.DefaultTableModel(
@@ -1243,6 +1332,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
 
             }
         ));
+        jTableTMexSettings.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_INTERVAL_SELECTION);
         jScrollPane10.setViewportView(jTableTMexSettings);
 
         jButtonTMexSettingsOk.setText(bundle1.getString("jButtonMCCCSettingsOk")); // NOI18N
@@ -1270,6 +1360,254 @@ public class ConsoleGUI extends javax.swing.JFrame {
                 .addComponent(jScrollPane10, javax.swing.GroupLayout.DEFAULT_SIZE, 253, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jButtonTMexSettingsOk)
+                .addContainerGap())
+        );
+
+        jDialogMoneyChooser.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        jDialogMoneyChooser.setAlwaysOnTop(true);
+        jDialogMoneyChooser.setModalityType(java.awt.Dialog.ModalityType.APPLICATION_MODAL);
+        jDialogMoneyChooser.setName("Money Chooser"); // NOI18N
+
+        jPanelMoneyChooser.setBorder(javax.swing.BorderFactory.createTitledBorder(""));
+
+        jLabelMoneyChooserAmount.setText(bundle1.getString("jLabelMoneyChooserAmount")); // NOI18N
+
+        jSpinnerMoneyChooser.setModel(new javax.swing.SpinnerNumberModel(0, 0, 9999999, 1));
+
+        javax.swing.GroupLayout jPanelMoneyChooserLayout = new javax.swing.GroupLayout(jPanelMoneyChooser);
+        jPanelMoneyChooser.setLayout(jPanelMoneyChooserLayout);
+        jPanelMoneyChooserLayout.setHorizontalGroup(
+            jPanelMoneyChooserLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelMoneyChooserLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jLabelMoneyChooserAmount, javax.swing.GroupLayout.DEFAULT_SIZE, 48, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jSpinnerMoneyChooser, javax.swing.GroupLayout.PREFERRED_SIZE, 304, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
+        jPanelMoneyChooserLayout.setVerticalGroup(
+            jPanelMoneyChooserLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelMoneyChooserLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanelMoneyChooserLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabelMoneyChooserAmount)
+                    .addComponent(jSpinnerMoneyChooser, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        var comp = jSpinnerMoneyChooser.getEditor();
+        var spinnerField = (javax.swing.JFormattedTextField) comp.getComponent(0);
+        var formatter = (javax.swing.text.DefaultFormatter) spinnerField.getFormatter();
+        formatter.setCommitsOnValidEdit(true);
+        formatter.setAllowsInvalid(false);
+        spinnerField.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                if (evt.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
+                    ConsoleGUI.this.jButtonMoneyChooserOk.requestFocus();
+                }
+            }
+        });
+
+        jButtonMoneyChooserOk.setText(bundle1.getString("jButtonMoneyChooserOk")); // NOI18N
+        jButtonMoneyChooserOk.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonMoneyChooserOkActionPerformed(evt);
+            }
+        });
+
+        jButtonMoneyChooserCancel.setText(bundle1.getString("jButtonMoneyChooserCancel")); // NOI18N
+        jButtonMoneyChooserCancel.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonMoneyChooserCancelActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jPanelMoneyChooserButtonsLayout = new javax.swing.GroupLayout(jPanelMoneyChooserButtons);
+        jPanelMoneyChooserButtons.setLayout(jPanelMoneyChooserButtonsLayout);
+        jPanelMoneyChooserButtonsLayout.setHorizontalGroup(
+            jPanelMoneyChooserButtonsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelMoneyChooserButtonsLayout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jButtonMoneyChooserOk, javax.swing.GroupLayout.PREFERRED_SIZE, 69, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jButtonMoneyChooserCancel, javax.swing.GroupLayout.PREFERRED_SIZE, 69, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
+        jPanelMoneyChooserButtonsLayout.setVerticalGroup(
+            jPanelMoneyChooserButtonsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelMoneyChooserButtonsLayout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(jPanelMoneyChooserButtonsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jButtonMoneyChooserCancel)
+                    .addComponent(jButtonMoneyChooserOk))
+                .addContainerGap())
+        );
+
+        javax.swing.GroupLayout jDialogMoneyChooserLayout = new javax.swing.GroupLayout(jDialogMoneyChooser.getContentPane());
+        jDialogMoneyChooser.getContentPane().setLayout(jDialogMoneyChooserLayout);
+        jDialogMoneyChooserLayout.setHorizontalGroup(
+            jDialogMoneyChooserLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jDialogMoneyChooserLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jDialogMoneyChooserLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jPanelMoneyChooser, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jPanelMoneyChooserButtons, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jLabelMoneyChooserDescription, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
+        );
+        jDialogMoneyChooserLayout.setVerticalGroup(
+            jDialogMoneyChooserLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jDialogMoneyChooserLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jLabelMoneyChooserDescription, javax.swing.GroupLayout.DEFAULT_SIZE, 21, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jPanelMoneyChooser, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jPanelMoneyChooserButtons, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
+
+        jDialogEditRelationship.setTitle(bundle1.getString("jDialogEditRelationship")); // NOI18N
+        jDialogEditRelationship.setAlwaysOnTop(true);
+        jDialogEditRelationship.setModal(true);
+        jDialogEditRelationship.setModalExclusionType(java.awt.Dialog.ModalExclusionType.APPLICATION_EXCLUDE);
+        jDialogEditRelationship.setName("Edit Relationship"); // NOI18N
+        jDialogEditRelationship.setResizable(false);
+
+        jPanelRelationshipSimChooser.setBorder(javax.swing.BorderFactory.createTitledBorder(bundle1.getString("jPanelRelationshipSimChooser"))); // NOI18N
+
+        jLabelRelationshipMainSim.setLabelFor(jComboBoxRelationshipMainSim);
+        jLabelRelationshipMainSim.setText(bundle1.getString("jLabelRelationshipMainSim")); // NOI18N
+
+        jLabelRelationshipSecondarySim.setLabelFor(jComboBoxRelationshipSecondarySim);
+        jLabelRelationshipSecondarySim.setText(bundle1.getString("jLabelRelationshipSecondarySim")); // NOI18N
+
+        javax.swing.GroupLayout jPanelRelationshipSimChooserLayout = new javax.swing.GroupLayout(jPanelRelationshipSimChooser);
+        jPanelRelationshipSimChooser.setLayout(jPanelRelationshipSimChooserLayout);
+        jPanelRelationshipSimChooserLayout.setHorizontalGroup(
+            jPanelRelationshipSimChooserLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelRelationshipSimChooserLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanelRelationshipSimChooserLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(jLabelRelationshipMainSim, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jLabelRelationshipSecondarySim, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(jPanelRelationshipSimChooserLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jComboBoxRelationshipSecondarySim, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jComboBoxRelationshipMainSim, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
+        );
+        jPanelRelationshipSimChooserLayout.setVerticalGroup(
+            jPanelRelationshipSimChooserLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelRelationshipSimChooserLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanelRelationshipSimChooserLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabelRelationshipMainSim)
+                    .addComponent(jComboBoxRelationshipMainSim, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanelRelationshipSimChooserLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabelRelationshipSecondarySim)
+                    .addComponent(jComboBoxRelationshipSecondarySim, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        jPanelRelationshipRelationshipType.setBorder(javax.swing.BorderFactory.createTitledBorder(bundle1.getString("jPanelRelationshipRelationshipType"))); // NOI18N
+
+        buttonGroupRelationship.add(jRadioButtonRelationshipFriendly);
+        jRadioButtonRelationshipFriendly.setSelected(true);
+        jRadioButtonRelationshipFriendly.setText(bundle1.getString("jRadioButtonRelationshipFriendly")); // NOI18N
+        jPanelRelationshipRelationshipType.add(jRadioButtonRelationshipFriendly);
+
+        buttonGroupRelationship.add(jRadioButtonRelationshipRomantic);
+        jRadioButtonRelationshipRomantic.setText(bundle1.getString("jRadioButtonRelationshipRomantic")); // NOI18N
+        jPanelRelationshipRelationshipType.add(jRadioButtonRelationshipRomantic);
+
+        jPanelRelationshipRelationshipValue.setBorder(javax.swing.BorderFactory.createTitledBorder(bundle1.getString("jPanelRelationshipRelationshipValue"))); // NOI18N
+
+        jSliderRelationshipRelationshipValue.setMajorTickSpacing(10);
+        jSliderRelationshipRelationshipValue.setMinimum(-100);
+        jSliderRelationshipRelationshipValue.setPaintTicks(true);
+        jSliderRelationshipRelationshipValue.setValue(0);
+
+        javax.swing.GroupLayout jPanelRelationshipRelationshipValueLayout = new javax.swing.GroupLayout(jPanelRelationshipRelationshipValue);
+        jPanelRelationshipRelationshipValue.setLayout(jPanelRelationshipRelationshipValueLayout);
+        jPanelRelationshipRelationshipValueLayout.setHorizontalGroup(
+            jPanelRelationshipRelationshipValueLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelRelationshipRelationshipValueLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jSliderRelationshipRelationshipValue, javax.swing.GroupLayout.DEFAULT_SIZE, 356, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+        jPanelRelationshipRelationshipValueLayout.setVerticalGroup(
+            jPanelRelationshipRelationshipValueLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelRelationshipRelationshipValueLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jSliderRelationshipRelationshipValue, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        jButtonRelationshipOk.setText(bundle1.getString("jButtonRelationshipOk")); // NOI18N
+        jButtonRelationshipOk.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonRelationshipOkActionPerformed(evt);
+            }
+        });
+
+        jButtonRelationshipCancel.setText(bundle1.getString("jButtonRelationshipCancel")); // NOI18N
+        jButtonRelationshipCancel.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonRelationshipCancelActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jPanelRelationshipButtonsLayout = new javax.swing.GroupLayout(jPanelRelationshipButtons);
+        jPanelRelationshipButtons.setLayout(jPanelRelationshipButtonsLayout);
+        jPanelRelationshipButtonsLayout.setHorizontalGroup(
+            jPanelRelationshipButtonsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelRelationshipButtonsLayout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jButtonRelationshipOk, javax.swing.GroupLayout.PREFERRED_SIZE, 69, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jButtonRelationshipCancel, javax.swing.GroupLayout.PREFERRED_SIZE, 69, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
+        jPanelRelationshipButtonsLayout.setVerticalGroup(
+            jPanelRelationshipButtonsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelRelationshipButtonsLayout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(jPanelRelationshipButtonsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jButtonRelationshipOk)
+                    .addComponent(jButtonRelationshipCancel))
+                .addContainerGap())
+        );
+
+        javax.swing.GroupLayout jDialogEditRelationshipLayout = new javax.swing.GroupLayout(jDialogEditRelationship.getContentPane());
+        jDialogEditRelationship.getContentPane().setLayout(jDialogEditRelationshipLayout);
+        jDialogEditRelationshipLayout.setHorizontalGroup(
+            jDialogEditRelationshipLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jDialogEditRelationshipLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jDialogEditRelationshipLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jPanelRelationshipButtons, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jDialogEditRelationshipLayout.createSequentialGroup()
+                        .addGroup(jDialogEditRelationshipLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jPanelRelationshipRelationshipValue, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jPanelRelationshipSimChooser, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jPanelRelationshipRelationshipType, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addContainerGap())))
+        );
+        jDialogEditRelationshipLayout.setVerticalGroup(
+            jDialogEditRelationshipLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jDialogEditRelationshipLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jPanelRelationshipSimChooser, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jPanelRelationshipRelationshipType, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jPanelRelationshipRelationshipValue, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jPanelRelationshipButtons, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
 
@@ -1330,12 +1668,11 @@ public class ConsoleGUI extends javax.swing.JFrame {
 
         jPanelCommandStatus.setMaximumSize(new java.awt.Dimension(150, 23));
         jPanelCommandStatus.add(filler9);
+        jPanelCommandStatus.add(filler10);
 
         jLabelCommandStatus.setText(bundle.getString("jLabelCommandStatusNone")); // NOI18N
         jPanelCommandStatus.add(jLabelCommandStatus);
         jLabelCommandStatus.getAccessibleContext().setAccessibleName("Command Status");
-
-        jPanelCommandStatus.add(filler10);
 
         jToolBarStatusBar.add(jPanelCommandStatus);
         jToolBarStatusBar.add(jSeparator1);
@@ -1572,7 +1909,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
                 .addGroup(jPanelSettingsConsoleGUILayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabelSettingsLookAndFeel)
                     .addComponent(jComboBoxSettingsLookAndFeel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(0, 10, Short.MAX_VALUE))
         );
 
         jPanelSettingsCheatsConsole.setBorder(javax.swing.BorderFactory.createTitledBorder(bundle.getString("jPanelSettingsCheatsConsole"))); // NOI18N
@@ -1658,7 +1995,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
                     .addGroup(jPanelSettingsEditorColourLayout.createSequentialGroup()
                         .addComponent(jLabelColourHexHash, javax.swing.GroupLayout.PREFERRED_SIZE, 7, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jFormattedTextFieldSettingsEditorColour, javax.swing.GroupLayout.DEFAULT_SIZE, 151, Short.MAX_VALUE)
+                        .addComponent(jFormattedTextFieldSettingsEditorColour, javax.swing.GroupLayout.DEFAULT_SIZE, 61, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jLabelSettingsColourPreview, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -1726,7 +2063,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
                 .addGap(2, 2, 2)
                 .addComponent(jLabelSettingsPreview)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 61, Short.MAX_VALUE)
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 38, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -1745,7 +2082,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
             jPanelSettingsAppearanceLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanelSettingsAppearanceLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jPanelSettingsConsoleGUI, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jPanelSettingsConsoleGUI, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanelSettingsCheatsConsole, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addContainerGap())
@@ -1817,7 +2154,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
             .addGroup(jPanelSettingsMenuItemShortcutLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanelSettingsMenuItemShortcutLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jPanelSettingsShortcutControlKeys, javax.swing.GroupLayout.DEFAULT_SIZE, 367, Short.MAX_VALUE)
+                    .addComponent(jPanelSettingsShortcutControlKeys, javax.swing.GroupLayout.DEFAULT_SIZE, 277, Short.MAX_VALUE)
                     .addGroup(jPanelSettingsMenuItemShortcutLayout.createSequentialGroup()
                         .addComponent(jLabelSettingsKey)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -2005,7 +2342,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(jPanelSystemTrayMenuLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabelSystemTrayMenu, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jScrollPane6, javax.swing.GroupLayout.DEFAULT_SIZE, 391, Short.MAX_VALUE))
+                    .addComponent(jScrollPane6, javax.swing.GroupLayout.DEFAULT_SIZE, 301, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanelSystemTrayMenuLayout.setVerticalGroup(
@@ -2014,7 +2351,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
                 .addContainerGap()
                 .addComponent(jLabelSystemTrayMenu)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane6, javax.swing.GroupLayout.DEFAULT_SIZE, 72, Short.MAX_VALUE)
+                .addComponent(jScrollPane6, javax.swing.GroupLayout.DEFAULT_SIZE, 55, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -2037,7 +2374,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
             .addGroup(jPanelSettingsKeyBindingsLayout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jPanelSettingsMenuBindings, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(149, Short.MAX_VALUE))
+                .addContainerGap(132, Short.MAX_VALUE))
             .addGroup(jPanelSettingsKeyBindingsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelSettingsKeyBindingsLayout.createSequentialGroup()
                     .addGap(200, 200, 200)
@@ -2047,6 +2384,19 @@ public class ConsoleGUI extends javax.swing.JFrame {
 
         jTabbedPaneSettings.addTab(bundle.getString("jPanelSettingsKeyBindings"), jPanelSettingsKeyBindings); // NOI18N
 
+        javax.swing.GroupLayout jPanelToolbarLayout = new javax.swing.GroupLayout(jPanelToolbar);
+        jPanelToolbar.setLayout(jPanelToolbarLayout);
+        jPanelToolbarLayout.setHorizontalGroup(
+            jPanelToolbarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 353, Short.MAX_VALUE)
+        );
+        jPanelToolbarLayout.setVerticalGroup(
+            jPanelToolbarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 325, Short.MAX_VALUE)
+        );
+
+        jTabbedPaneSettings.addTab(bundle1.getString("jPanelToolbar"), jPanelToolbar); // NOI18N
+
         javax.swing.GroupLayout jPanelSettingsEditorLayout = new javax.swing.GroupLayout(jPanelSettingsEditor);
         jPanelSettingsEditor.setLayout(jPanelSettingsEditorLayout);
         jPanelSettingsEditorLayout.setHorizontalGroup(
@@ -2055,7 +2405,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
         );
         jPanelSettingsEditorLayout.setVerticalGroup(
             jPanelSettingsEditorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 342, Short.MAX_VALUE)
+            .addGap(0, 325, Short.MAX_VALUE)
         );
 
         jTabbedPaneSettings.addTab(bundle.getString("jPanelSettingsEditor"), jPanelSettingsEditor); // NOI18N
@@ -2158,7 +2508,14 @@ public class ConsoleGUI extends javax.swing.JFrame {
         });
         jScrollPane8.setViewportView(jListInitialSettings);
 
+        jPanelMCCC.setLayout(new java.awt.BorderLayout());
+
         jCheckBoxMCCC.setText(bundle1.getString("jCheckBoxMCCC")); // NOI18N
+        jPanelMCCC.add(jCheckBoxMCCC, java.awt.BorderLayout.CENTER);
+        jCheckBoxMCCC.addActionListener((evt) -> {
+            var state = ConsoleGUI.settings.mcccSettings != null;
+            ((javax.swing.JCheckBox)evt.getSource()).setSelected(state);
+        });
 
         jButtonMCCC.setText(bundle1.getString("jButtonMCCC")); // NOI18N
         jButtonMCCC.setEnabled(false);
@@ -2167,34 +2524,16 @@ public class ConsoleGUI extends javax.swing.JFrame {
                 jButtonMCCCActionPerformed(evt);
             }
         });
+        jPanelMCCC.add(jButtonMCCC, java.awt.BorderLayout.EAST);
 
-        javax.swing.GroupLayout jPanelMCCCLayout = new javax.swing.GroupLayout(jPanelMCCC);
-        jPanelMCCC.setLayout(jPanelMCCCLayout);
-        jPanelMCCCLayout.setHorizontalGroup(
-            jPanelMCCCLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanelMCCCLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jCheckBoxMCCC, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jButtonMCCC, javax.swing.GroupLayout.PREFERRED_SIZE, 69, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
-        );
-        jPanelMCCCLayout.setVerticalGroup(
-            jPanelMCCCLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanelMCCCLayout.createSequentialGroup()
-                .addGap(0, 6, Short.MAX_VALUE)
-                .addGroup(jPanelMCCCLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jCheckBoxMCCC)
-                    .addComponent(jButtonMCCC))
-                .addContainerGap())
-        );
-
-        jCheckBoxMCCC.addActionListener((evt) -> {
-            var state = ConsoleGUI.settings.mcccSettings != null;
-            ((javax.swing.JCheckBox)evt.getSource()).setSelected(state);
-        });
+        jPanelTMEX.setLayout(new java.awt.BorderLayout());
 
         jCheckBoxTMEX.setText(bundle1.getString("jCheckBoxTMEX")); // NOI18N
+        jPanelTMEX.add(jCheckBoxTMEX, java.awt.BorderLayout.CENTER);
+        jCheckBoxTMEX.addActionListener((evt) -> {
+            var state = ConsoleGUI.settings.tmexSettings != null;
+            ((javax.swing.JCheckBox)evt.getSource()).setSelected(state);
+        });
 
         jButtonTMEX.setText(bundle1.getString("jButtonTMEX")); // NOI18N
         jButtonTMEX.setEnabled(false);
@@ -2203,32 +2542,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
                 jButtonTMEXActionPerformed(evt);
             }
         });
-
-        javax.swing.GroupLayout jPanelTMEXLayout = new javax.swing.GroupLayout(jPanelTMEX);
-        jPanelTMEX.setLayout(jPanelTMEXLayout);
-        jPanelTMEXLayout.setHorizontalGroup(
-            jPanelTMEXLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanelTMEXLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jCheckBoxTMEX, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jButtonTMEX, javax.swing.GroupLayout.PREFERRED_SIZE, 69, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
-        );
-        jPanelTMEXLayout.setVerticalGroup(
-            jPanelTMEXLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanelTMEXLayout.createSequentialGroup()
-                .addGap(0, 6, Short.MAX_VALUE)
-                .addGroup(jPanelTMEXLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jCheckBoxTMEX)
-                    .addComponent(jButtonTMEX))
-                .addContainerGap())
-        );
-
-        jCheckBoxTMEX.addActionListener((evt) -> {
-            var state = ConsoleGUI.settings.tmexSettings != null;
-            ((javax.swing.JCheckBox)evt.getSource()).setSelected(state);
-        });
+        jPanelTMEX.add(jButtonTMEX, java.awt.BorderLayout.EAST);
 
         javax.swing.GroupLayout jPanelInitialSettingsLayout = new javax.swing.GroupLayout(jPanelInitialSettings);
         jPanelInitialSettings.setLayout(jPanelInitialSettingsLayout);
@@ -2249,7 +2563,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanelTMEX, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane8, javax.swing.GroupLayout.DEFAULT_SIZE, 23, Short.MAX_VALUE)
+                .addComponent(jScrollPane8, javax.swing.GroupLayout.DEFAULT_SIZE, 38, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -2419,11 +2733,6 @@ public class ConsoleGUI extends javax.swing.JFrame {
 
         jCheckBoxMenuItemTestingCheats.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_T, java.awt.event.InputEvent.SHIFT_MASK | java.awt.event.InputEvent.CTRL_MASK));
         jCheckBoxMenuItemTestingCheats.setText(bundle.getString("jCheckBoxMenuItemTestingCheats")); // NOI18N
-        jCheckBoxMenuItemTestingCheats.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItemTestingCheatsActionPerformed(evt);
-            }
-        });
         jMenuToggles.add(jCheckBoxMenuItemTestingCheats);
         jMenuToggles.add(jSeparator7);
 
@@ -2497,15 +2806,30 @@ public class ConsoleGUI extends javax.swing.JFrame {
 
         jMenuItemSetMoney.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_4, java.awt.event.InputEvent.SHIFT_MASK | java.awt.event.InputEvent.CTRL_MASK));
         jMenuItemSetMoney.setText(bundle.getString("jMenuItemSetMoney")); // NOI18N
+        jMenuItemSetMoney.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemSetMoneyActionPerformed(evt);
+            }
+        });
         jMenuMoney.add(jMenuItemSetMoney);
         jMenuMoney.add(jSeparator15);
 
         jMenuItemDepositMoney.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_EQUALS, java.awt.event.InputEvent.SHIFT_MASK | java.awt.event.InputEvent.CTRL_MASK));
         jMenuItemDepositMoney.setText(bundle.getString("jMenuItemDepositMoney")); // NOI18N
+        jMenuItemDepositMoney.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemDepositMoneyActionPerformed(evt);
+            }
+        });
         jMenuMoney.add(jMenuItemDepositMoney);
 
         jMenuItemWithdrawMoney.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_MINUS, java.awt.event.InputEvent.SHIFT_MASK | java.awt.event.InputEvent.CTRL_MASK));
         jMenuItemWithdrawMoney.setText(bundle.getString("jMenuItemWithdrawMoney")); // NOI18N
+        jMenuItemWithdrawMoney.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemWithdrawMoneyActionPerformed(evt);
+            }
+        });
         jMenuMoney.add(jMenuItemWithdrawMoney);
 
         jMenuCheats.add(jMenuMoney);
@@ -2550,6 +2874,11 @@ public class ConsoleGUI extends javax.swing.JFrame {
         jMenuRelationshipCheats.setText(bundle.getString("jMenuRelationshipCheats")); // NOI18N
 
         jMenuItemEditRelationship.setText(bundle.getString("jMenuItemEditRelationship")); // NOI18N
+        jMenuItemEditRelationship.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemEditRelationshipActionPerformed(evt);
+            }
+        });
         jMenuRelationshipCheats.add(jMenuItemEditRelationship);
 
         jMenuItemClearAllRelationships.setText(bundle.getString("jMenuItemClearAllRelationships")); // NOI18N
@@ -2817,8 +3146,8 @@ public class ConsoleGUI extends javax.swing.JFrame {
     }//GEN-LAST:event_jInternalFrameSettingsInternalFrameClosing
 
     private void openSettingsWindow() {
-        this.jInternalFrameSettings.setSize(480, 500);
         this.jInternalFrameSettings.setLocation(30, 30);
+        this.jInternalFrameSettings.pack();
         this.jTabbedPaneSettings.setSelectedIndex(0);
         this.jInternalFrameSettings.setVisible(true);
 
@@ -3287,10 +3616,6 @@ public class ConsoleGUI extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jDesktopPaneDesktopComponentAdded
 
-    private void jCheckBoxMenuItemTestingCheatsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItemTestingCheatsActionPerformed
-
-    }//GEN-LAST:event_jCheckBoxMenuItemTestingCheatsActionPerformed
-
     private void jTextFieldKeyStrokeKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldKeyStrokeKeyPressed
         if (evt.getKeyCode() == KeyEvent.VK_CONTROL ||
                 evt.getKeyCode() == KeyEvent.VK_ALT || 
@@ -3364,6 +3689,8 @@ public class ConsoleGUI extends javax.swing.JFrame {
             }
             
         });
+        this.jTableMCCCSettings.setRowSorter(
+                new javax.swing.table.TableRowSorter<>(this.jTableMCCCSettings.getModel()));
         
         this.jDialogMCCCSettings.pack();
         this.jDialogMCCCSettings.setVisible(true);
@@ -3371,7 +3698,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
     }//GEN-LAST:event_jButtonMCCCActionPerformed
 
     private void jButtonMCCCSettingsOkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonMCCCSettingsOkActionPerformed
-        this.jDialogMCCCSettings.setVisible(false);
+        this.jDialogMCCCSettings.dispose();
     }//GEN-LAST:event_jButtonMCCCSettingsOkActionPerformed
 
     private void jMenuItemMotherlodeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemMotherlodeActionPerformed
@@ -3391,7 +3718,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
     }//GEN-LAST:event_jMenuItemEnableFreeBuildActionPerformed
 
     private void jButtonTMexSettingsOkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonTMexSettingsOkActionPerformed
-        this.jDialogTMexSettings.setVisible(false);
+        this.jDialogTMexSettings.dispose();
     }//GEN-LAST:event_jButtonTMexSettingsOkActionPerformed
 
     private void jButtonTMEXActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonTMEXActionPerformed
@@ -3420,11 +3747,129 @@ public class ConsoleGUI extends javax.swing.JFrame {
             }
             
         });
+        this.jTableTMexSettings.setRowSorter(
+                new javax.swing.table.TableRowSorter<>(this.jTableTMexSettings.getModel()));
         
         this.jDialogTMexSettings.pack();
         this.jDialogTMexSettings.setVisible(true);
         this.jButtonTMexSettingsOk.requestFocus();
     }//GEN-LAST:event_jButtonTMEXActionPerformed
+
+    private void jMenuItemSetMoneyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemSetMoneyActionPerformed
+        var bundle = java.util.ResourceBundle.getBundle("ConsoleGUI");
+        
+        int funds = 0;
+        var response = this.executeQuery("HOUSEHOLD FUNDS");
+        if (response != null)
+            funds = Integer.parseInt(response.replace("MESSAGE: INFO: FUNDS: ", ""));
+        
+        var model = (javax.swing.SpinnerNumberModel) this.jSpinnerMoneyChooser.getModel();
+        model.setMaximum(9999999);
+        model.setMinimum(0);
+        model.setValue(funds);
+        
+        var description = bundle.getString("jLabelMoneyChooserDescriptionSetMoney");
+        
+        this.jDialogMoneyChooser.setTitle(bundle.getString("jDialogMoneyChooserSetMoneyTitle"));
+        this.jLabelMoneyChooserDescription.setText(description);
+        this.jDialogMoneyChooser.pack();
+        this.jButtonMoneyChooserOk.setActionCommand("money %d");
+        this.jDialogMoneyChooser.setVisible(true);
+        this.jButtonMoneyChooserOk.requestFocus();
+    }//GEN-LAST:event_jMenuItemSetMoneyActionPerformed
+
+    private void jMenuItemDepositMoneyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemDepositMoneyActionPerformed
+        var bundle = java.util.ResourceBundle.getBundle("ConsoleGUI");
+        
+        int funds = 0;
+        var response = this.executeQuery("HOUSEHOLD FUNDS");
+        if (response != null)
+            funds = Integer.parseInt(response.replace("MESSAGE: INFO: FUNDS: ", ""));
+        
+        var model = (javax.swing.SpinnerNumberModel) this.jSpinnerMoneyChooser.getModel();
+        model.setMaximum(9999999 - funds);
+        model.setMinimum(1);
+        model.setValue(1);
+        
+        var description = bundle.getString("jLabelMoneyChooserDescriptionDepositMoney");
+        description = String.format(description, model.getMaximum());
+        
+        this.jDialogMoneyChooser.setTitle(bundle.getString("jDialogMoneyChooserDepositMoneyTitle"));
+        this.jLabelMoneyChooserDescription.setText(description);
+        this.jDialogMoneyChooser.pack();
+        this.jButtonMoneyChooserOk.setActionCommand("sims.modify_funds %d");
+        this.jDialogMoneyChooser.setVisible(true);
+        this.jButtonMoneyChooserOk.requestFocus();
+    }//GEN-LAST:event_jMenuItemDepositMoneyActionPerformed
+
+    private void jMenuItemWithdrawMoneyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemWithdrawMoneyActionPerformed
+        var bundle = java.util.ResourceBundle.getBundle("ConsoleGUI");
+        
+        int funds = 0;
+        var response = this.executeQuery("HOUSEHOLD FUNDS");
+        if (response != null)
+            funds = Integer.parseInt(response.replace("MESSAGE: INFO: FUNDS: ", ""));
+        
+        var model = (javax.swing.SpinnerNumberModel) this.jSpinnerMoneyChooser.getModel();
+        model.setMaximum(funds);
+        model.setMinimum(1);
+        model.setValue(1);
+        
+        var description = bundle.getString("jLabelMoneyChooserDescriptionWithdrawMoney");
+        description = String.format(description, model.getMaximum());
+        
+        this.jDialogMoneyChooser.setTitle(bundle.getString("jDialogMoneyChooserWithdrawMoneyTitle"));
+        this.jLabelMoneyChooserDescription.setText(description);
+        this.jDialogMoneyChooser.pack();
+        this.jButtonMoneyChooserOk.setActionCommand("sims.modify_funds -%d");
+        this.jSpinnerMoneyChooser.setValue(0);
+        this.jDialogMoneyChooser.setVisible(true);
+        this.jButtonMoneyChooserOk.requestFocus();
+    }//GEN-LAST:event_jMenuItemWithdrawMoneyActionPerformed
+
+    private void jButtonMoneyChooserCancelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonMoneyChooserCancelActionPerformed
+        this.jDialogMoneyChooser.dispose();
+    }//GEN-LAST:event_jButtonMoneyChooserCancelActionPerformed
+
+    private void jButtonMoneyChooserOkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonMoneyChooserOkActionPerformed
+        this.executeCommand(
+                String.format(this.jButtonMoneyChooserOk.getActionCommand(),
+                        this.jSpinnerMoneyChooser.getValue()));
+        this.jDialogMoneyChooser.dispose();
+    }//GEN-LAST:event_jButtonMoneyChooserOkActionPerformed
+
+    private void jMenuItemEditRelationshipActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemEditRelationshipActionPerformed
+        this.simsNameToIdMap.keySet().forEach((sim) ->
+                this.jComboBoxRelationshipMainSim.addItem(sim));
+        this.simsNameToIdMap.keySet().forEach((sim) ->
+                this.jComboBoxRelationshipSecondarySim.addItem(sim));
+        
+        this.jDialogEditRelationship.pack();
+        this.jButtonRelationshipCancel.requestFocus();
+        this.jDialogEditRelationship.setVisible(true);
+    }//GEN-LAST:event_jMenuItemEditRelationshipActionPerformed
+
+    private void jButtonRelationshipCancelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonRelationshipCancelActionPerformed
+        this.jDialogEditRelationship.dispose();
+    }//GEN-LAST:event_jButtonRelationshipCancelActionPerformed
+
+    private void jButtonRelationshipOkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonRelationshipOkActionPerformed
+        String cheatCode = "|modifyrelationship %s %s %d %s";
+        
+        String sim1 = this.jComboBoxRelationshipMainSim.getSelectedItem().toString();
+        String sim2 = this.jComboBoxRelationshipSecondarySim.getSelectedItem().toString();
+        String type = this.jRadioButtonRelationshipFriendly.isSelected() ? "LTR_Friendship_Main" :
+                "Romance_Main";
+        int value = this.jSliderRelationshipRelationshipValue.getValue();
+        
+        String cheat1 = String.format(cheatCode, sim1, sim2, value, type);
+        String cheat2 = String.format(cheatCode, sim2, sim1, value, type);
+        
+        this.executeCommand(cheat1);
+        this.executeCommand(cheat2);
+        
+        this.jDialogEditRelationship.dispose();
+    }//GEN-LAST:event_jButtonRelationshipOkActionPerformed
 
     private void jListSystemTrayMenuMouseClicked(java.awt.event.MouseEvent evt) {
         var list = (javax.swing.JList<CheckListItem>) evt.getSource();
@@ -3450,6 +3895,32 @@ public class ConsoleGUI extends javax.swing.JFrame {
         this.determineIfSettingsChanged();
 
         list.repaint(list.getCellBounds(index, index));
+    }
+    
+    private String executeQuery(String query) {
+        var bundle = java.util.ResourceBundle.getBundle("ConsoleGUI");
+
+        this.jLabelCommandStatus.setText(bundle.getString("jLabelCommandStatusQuerying"));
+        this.jProgressBarStatus.setVisible(true);
+        this.jSeparator1.setVisible(true);
+        
+        this.connData.out.format("QUERY: %s\n", query);
+        this.connData.out.flush();
+        
+        try {
+            var result = this.connData.in.readLine();
+            this.jLabelCommandStatus.setText(bundle.getString("jLabelCommandStatusDone"));
+
+            return result;
+        } catch (IOException ex) {
+            Logger.getLogger(ConsoleGUI.class.getName()).log(Level.SEVERE, null, ex);
+            this.jLabelCommandStatus.setText(bundle.getString("jLabelCommandStatusFailed"));
+        } finally {
+            this.jProgressBarStatus.setVisible(false);
+            this.jSeparator1.setVisible(false);
+        }
+
+        return null;
     }
 
     private String executeCommand(String command) {
@@ -3638,6 +4109,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.ButtonGroup buttonGroupRelationship;
     private javax.swing.Box.Filler filler1;
     private javax.swing.Box.Filler filler10;
     private javax.swing.Box.Filler filler2;
@@ -3649,6 +4121,10 @@ public class ConsoleGUI extends javax.swing.JFrame {
     private javax.swing.JButton jButtonAboutClose;
     private javax.swing.JButton jButtonMCCC;
     private javax.swing.JButton jButtonMCCCSettingsOk;
+    private javax.swing.JButton jButtonMoneyChooserCancel;
+    private javax.swing.JButton jButtonMoneyChooserOk;
+    private javax.swing.JButton jButtonRelationshipCancel;
+    private javax.swing.JButton jButtonRelationshipOk;
     private javax.swing.JButton jButtonSettingsApply;
     private javax.swing.JButton jButtonSettingsCancel;
     private javax.swing.JButton jButtonSettingsChooseColour;
@@ -3674,6 +4150,8 @@ public class ConsoleGUI extends javax.swing.JFrame {
     private javax.swing.JCheckBox jCheckBoxSettingsSaveWindowSize;
     private javax.swing.JCheckBox jCheckBoxSettingsShift;
     private javax.swing.JCheckBox jCheckBoxTMEX;
+    private javax.swing.JComboBox<String> jComboBoxRelationshipMainSim;
+    private javax.swing.JComboBox<String> jComboBoxRelationshipSecondarySim;
     private javax.swing.JComboBox<String> jComboBoxSettingsEditorColourCategory;
     private javax.swing.JComboBox<String> jComboBoxSettingsFontFamily;
     private javax.swing.JComboBox<Integer> jComboBoxSettingsFontSize;
@@ -3682,7 +4160,9 @@ public class ConsoleGUI extends javax.swing.JFrame {
     private javax.swing.JComboBox<VirtualKey> jComboBoxSettingsShortcutKey;
     private javax.swing.JDesktopPane jDesktopPaneDesktop;
     private javax.swing.JDialog jDialogAbout;
+    private javax.swing.JDialog jDialogEditRelationship;
     private javax.swing.JDialog jDialogMCCCSettings;
+    private javax.swing.JDialog jDialogMoneyChooser;
     private javax.swing.JDialog jDialogTMexSettings;
     private javax.swing.JEditorPane jEditorPaneAbout;
     private javax.swing.JEditorPane jEditorPaneConsoleOutput;
@@ -3695,6 +4175,10 @@ public class ConsoleGUI extends javax.swing.JFrame {
     private javax.swing.JLabel jLabelCommandStatus;
     private javax.swing.JLabel jLabelConnectionStatus;
     private javax.swing.JLabel jLabelConsolePrompt;
+    private javax.swing.JLabel jLabelMoneyChooserAmount;
+    private javax.swing.JLabel jLabelMoneyChooserDescription;
+    private javax.swing.JLabel jLabelRelationshipMainSim;
+    private javax.swing.JLabel jLabelRelationshipSecondarySim;
     private javax.swing.JLabel jLabelSettingsColourPreview;
     private javax.swing.JLabel jLabelSettingsEditorColour;
     private javax.swing.JLabel jLabelSettingsEditorColourCategory;
@@ -3749,6 +4233,12 @@ public class ConsoleGUI extends javax.swing.JFrame {
     private javax.swing.JPanel jPanelConsole;
     private javax.swing.JPanel jPanelInitialSettings;
     private javax.swing.JPanel jPanelMCCC;
+    private javax.swing.JPanel jPanelMoneyChooser;
+    private javax.swing.JPanel jPanelMoneyChooserButtons;
+    private javax.swing.JPanel jPanelRelationshipButtons;
+    private javax.swing.JPanel jPanelRelationshipRelationshipType;
+    private javax.swing.JPanel jPanelRelationshipRelationshipValue;
+    private javax.swing.JPanel jPanelRelationshipSimChooser;
     private javax.swing.JPanel jPanelSettingsAppearance;
     private javax.swing.JPanel jPanelSettingsButtons;
     private javax.swing.JPanel jPanelSettingsCheatsConsole;
@@ -3766,7 +4256,10 @@ public class ConsoleGUI extends javax.swing.JFrame {
     private javax.swing.JPanel jPanelSettingsSizing;
     private javax.swing.JPanel jPanelSystemTrayMenu;
     private javax.swing.JPanel jPanelTMEX;
+    private javax.swing.JPanel jPanelToolbar;
     private javax.swing.JProgressBar jProgressBarStatus;
+    private javax.swing.JRadioButton jRadioButtonRelationshipFriendly;
+    private javax.swing.JRadioButton jRadioButtonRelationshipRomantic;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane10;
     private javax.swing.JScrollPane jScrollPane2;
@@ -3792,6 +4285,8 @@ public class ConsoleGUI extends javax.swing.JFrame {
     private javax.swing.JPopupMenu.Separator jSeparator7;
     private javax.swing.JPopupMenu.Separator jSeparator8;
     private javax.swing.JPopupMenu.Separator jSeparator9;
+    private javax.swing.JSlider jSliderRelationshipRelationshipValue;
+    private javax.swing.JSpinner jSpinnerMoneyChooser;
     private javax.swing.JSplitPane jSplitPane1;
     private javax.swing.JSplitPane jSplitPane2;
     private javax.swing.JTabbedPane jTabbedPaneSettings;
