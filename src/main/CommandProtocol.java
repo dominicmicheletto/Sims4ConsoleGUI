@@ -1,5 +1,7 @@
 package main;
 
+import java.util.ArrayList;
+
 /**
  *
  * @author miche
@@ -55,8 +57,39 @@ public class CommandProtocol {
     }
 
     public CommandState currentState;
+    private final ArrayList<CommandStateListener> listeners;
 
     public CommandProtocol() {
         this.currentState = CommandState.WAITING;
+        this.listeners = new ArrayList<>();
     }
+    
+    public void addListener(CommandStateListener listener) {
+        this.listeners.add(listener);
+    }
+    
+    public void removeListener(CommandStateListener listener) {
+        this.listeners.remove(listener);
+    }
+    
+    public void setState(CommandState newState) {
+        var prevState = this.currentState;
+        
+        this.currentState = newState;
+        this.updateState(prevState);
+    }
+    
+    public CommandState getState() {
+        return this.currentState;
+    }
+    
+    public void processInput(ConnectionData input) {
+        
+    }
+    
+    private void updateState(CommandState prevState) {
+        this.listeners.forEach((event) ->
+                new CommandStateChangedEvent(prevState, this.currentState));
+    }
+    
 }

@@ -563,9 +563,13 @@
                 <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
                   <StringArray count="0"/>
                 </Property>
+                <Property name="renderer" type="javax.swing.ListCellRenderer" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+                  <Connection code="new SimItemListCellRenderer()" type="code"/>
+                </Property>
               </Properties>
               <AuxValues>
-                <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;String&gt;"/>
+                <AuxValue name="JavaCodeGenerator_AddingCodePost" type="java.lang.String" value="jComboBoxRelationshipMainSim.addActionListener(new java.awt.event.ActionListener() {&#xa;    private SimItem currentItem;&#xa;    private javax.swing.JComboBox&lt;SimItem&gt; parent;&#xa;&#xa;    {&#xa;        this.parent = ConsoleGUI.this.jComboBoxRelationshipMainSim;&#xa;        this.currentItem = null;&#xa;    }&#xa;    &#xa;    public void actionPerformed(java.awt.event.ActionEvent evt) {&#xa;        var selectedItem = this.parent.getSelectedItem();&#xa;        if (selectedItem == null)&#xa;            return;&#xa;        &#xa;        if (selectedItem instanceof SimItemSeparator) {&#xa;            this.parent.setSelectedItem(this.currentItem);&#xa;        }&#xa;        else {&#xa;            this.currentItem = (SimItem) selectedItem;&#xa;            jComboBoxRelationshipMainSimActionPerformed(evt);&#xa;        }&#xa;    }&#xa;});"/>
+                <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;SimItem&gt;"/>
               </AuxValues>
             </Component>
             <Component class="javax.swing.JLabel" name="jLabelRelationshipSecondarySim">
@@ -583,9 +587,13 @@
                 <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
                   <StringArray count="0"/>
                 </Property>
+                <Property name="renderer" type="javax.swing.ListCellRenderer" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+                  <Connection code="new SimItemListCellRenderer()" type="code"/>
+                </Property>
               </Properties>
               <AuxValues>
-                <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;String&gt;"/>
+                <AuxValue name="JavaCodeGenerator_AddingCodePost" type="java.lang.String" value="jComboBoxRelationshipSecondarySim.addActionListener(new java.awt.event.ActionListener() {&#xa;    private SimItem currentItem;&#xa;    private javax.swing.JComboBox&lt;SimItem&gt; parent;&#xa;&#xa;    {&#xa;        this.parent = ConsoleGUI.this.jComboBoxRelationshipSecondarySim;&#xa;        this.currentItem = null;&#xa;    }&#xa;    &#xa;    public void actionPerformed(java.awt.event.ActionEvent evt) {&#xa;        var selectedItem = this.parent.getSelectedItem();&#xa;        if (selectedItem == null)&#xa;            return;&#xa;        &#xa;        if (selectedItem instanceof SimItemSeparator) {&#xa;            this.parent.setSelectedItem(this.currentItem);&#xa;        }&#xa;        else {&#xa;            this.currentItem = (SimItem) selectedItem;&#xa;            jComboBoxRelationshipSecondarySimActionPerformed(evt);&#xa;        }&#xa;    }&#xa;});"/>
+                <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;SimItem&gt;"/>
               </AuxValues>
             </Component>
           </SubComponents>
@@ -613,6 +621,9 @@
                   <ResourceString bundle="ConsoleGUI.properties" key="jRadioButtonRelationshipFriendly" replaceFormat="java.util.ResourceBundle.getBundle(&quot;{bundleNameSlashes}&quot;).getString(&quot;{key}&quot;)"/>
                 </Property>
               </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jRadioButtonRelationshipFriendlyActionPerformed"/>
+              </Events>
             </Component>
             <Component class="javax.swing.JRadioButton" name="jRadioButtonRelationshipRomantic">
               <Properties>
@@ -623,6 +634,9 @@
                   <ResourceString bundle="ConsoleGUI.properties" key="jRadioButtonRelationshipRomantic" replaceFormat="java.util.ResourceBundle.getBundle(&quot;{bundleNameSlashes}&quot;).getString(&quot;{key}&quot;)"/>
                 </Property>
               </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jRadioButtonRelationshipRomanticActionPerformed"/>
+              </Events>
             </Component>
           </SubComponents>
         </Container>
@@ -698,6 +712,9 @@
           <SubComponents>
             <Component class="javax.swing.JButton" name="jButtonRelationshipOk">
               <Properties>
+                <Property name="mnemonic" type="int" editor="org.netbeans.modules.i18n.form.FormI18nMnemonicEditor">
+                  <ResourceString bundle="ConsoleGUI.properties" key="jButtonRelationshipOkMnemonic" replaceFormat="java.util.ResourceBundle.getBundle(&quot;{bundleNameSlashes}&quot;).getString(&quot;{key}&quot;)"/>
+                </Property>
                 <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
                   <ResourceString bundle="ConsoleGUI.properties" key="jButtonRelationshipOk" replaceFormat="java.util.ResourceBundle.getBundle(&quot;{bundleNameSlashes}&quot;).getString(&quot;{key}&quot;)"/>
                 </Property>
@@ -708,6 +725,9 @@
             </Component>
             <Component class="javax.swing.JButton" name="jButtonRelationshipCancel">
               <Properties>
+                <Property name="mnemonic" type="int" editor="org.netbeans.modules.i18n.form.FormI18nMnemonicEditor">
+                  <ResourceString bundle="ConsoleGUI.properties" key="jButtonRelationshipCancelMnemonic" replaceFormat="java.util.ResourceBundle.getBundle(&quot;{bundleNameSlashes}&quot;).getString(&quot;{key}&quot;)"/>
+                </Property>
                 <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
                   <ResourceString bundle="ConsoleGUI.properties" key="jButtonRelationshipCancel" replaceFormat="java.util.ResourceBundle.getBundle(&quot;{bundleNameSlashes}&quot;).getString(&quot;{key}&quot;)"/>
                 </Property>
@@ -1594,7 +1614,7 @@
                               <Component id="jTextFieldConsolePrompt" alignment="3" min="-2" max="-2" attributes="0"/>
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
-                          <Component id="jScrollPane1" pref="165" max="32767" attributes="0"/>
+                          <Component id="jScrollPane1" pref="169" max="32767" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                       </Group>
                   </Group>
@@ -1970,7 +1990,7 @@
                                   <EmptySpace min="-2" pref="2" max="-2" attributes="0"/>
                                   <Component id="jLabelSettingsPreview" min="-2" max="-2" attributes="0"/>
                                   <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="jScrollPane3" pref="38" max="32767" attributes="0"/>
+                                  <Component id="jScrollPane3" pref="110" max="32767" attributes="0"/>
                                   <EmptySpace max="-2" attributes="0"/>
                               </Group>
                           </Group>
@@ -2051,7 +2071,7 @@
                                           <Group type="102" attributes="0">
                                               <Component id="jLabelColourHexHash" min="-2" pref="7" max="-2" attributes="0"/>
                                               <EmptySpace max="-2" attributes="0"/>
-                                              <Component id="jFormattedTextFieldSettingsEditorColour" pref="61" max="32767" attributes="0"/>
+                                              <Component id="jFormattedTextFieldSettingsEditorColour" pref="151" max="32767" attributes="0"/>
                                               <EmptySpace max="-2" attributes="0"/>
                                               <Component id="jLabelSettingsColourPreview" min="-2" pref="25" max="-2" attributes="0"/>
                                               <EmptySpace max="-2" attributes="0"/>
@@ -2217,7 +2237,7 @@
                           <Group type="102" alignment="0" attributes="0">
                               <EmptySpace max="-2" attributes="0"/>
                               <Component id="jPanelSettingsMenuBindings" min="-2" max="-2" attributes="0"/>
-                              <EmptySpace pref="132" max="32767" attributes="0"/>
+                              <EmptySpace pref="204" max="32767" attributes="0"/>
                           </Group>
                           <Group type="103" rootIndex="1" groupAlignment="0" attributes="0">
                               <Group type="102" alignment="1" attributes="0">
@@ -2314,7 +2334,7 @@
                                   <Group type="102" attributes="0">
                                       <EmptySpace max="-2" attributes="0"/>
                                       <Group type="103" groupAlignment="0" attributes="0">
-                                          <Component id="jPanelSettingsShortcutControlKeys" pref="277" max="32767" attributes="0"/>
+                                          <Component id="jPanelSettingsShortcutControlKeys" pref="367" max="32767" attributes="0"/>
                                           <Group type="102" attributes="0">
                                               <Component id="jLabelSettingsKey" min="-2" max="-2" attributes="0"/>
                                               <EmptySpace max="-2" attributes="0"/>
@@ -2458,7 +2478,7 @@
                                   <EmptySpace max="-2" attributes="0"/>
                                   <Group type="103" groupAlignment="0" attributes="0">
                                       <Component id="jLabelSystemTrayMenu" max="32767" attributes="0"/>
-                                      <Component id="jScrollPane6" pref="301" max="32767" attributes="0"/>
+                                      <Component id="jScrollPane6" pref="391" max="32767" attributes="0"/>
                                   </Group>
                                   <EmptySpace max="-2" attributes="0"/>
                               </Group>
@@ -2470,7 +2490,7 @@
                                   <EmptySpace min="-2" max="-2" attributes="0"/>
                                   <Component id="jLabelSystemTrayMenu" min="-2" max="-2" attributes="0"/>
                                   <EmptySpace min="-2" max="-2" attributes="0"/>
-                                  <Component id="jScrollPane6" pref="55" max="32767" attributes="0"/>
+                                  <Component id="jScrollPane6" pref="127" max="32767" attributes="0"/>
                                   <EmptySpace min="-2" max="-2" attributes="0"/>
                               </Group>
                           </Group>
@@ -2529,12 +2549,12 @@
                   <Layout>
                     <DimensionLayout dim="0">
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <EmptySpace min="0" pref="353" max="32767" attributes="0"/>
+                          <EmptySpace min="0" pref="443" max="32767" attributes="0"/>
                       </Group>
                     </DimensionLayout>
                     <DimensionLayout dim="1">
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <EmptySpace min="0" pref="325" max="32767" attributes="0"/>
+                          <EmptySpace min="0" pref="397" max="32767" attributes="0"/>
                       </Group>
                     </DimensionLayout>
                   </Layout>
@@ -2553,12 +2573,12 @@
                   <Layout>
                     <DimensionLayout dim="0">
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <EmptySpace min="0" pref="353" max="32767" attributes="0"/>
+                          <EmptySpace min="0" pref="443" max="32767" attributes="0"/>
                       </Group>
                     </DimensionLayout>
                     <DimensionLayout dim="1">
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <EmptySpace min="0" pref="325" max="32767" attributes="0"/>
+                          <EmptySpace min="0" pref="397" max="32767" attributes="0"/>
                       </Group>
                     </DimensionLayout>
                   </Layout>
@@ -2591,9 +2611,9 @@
                     <DimensionLayout dim="1">
                       <Group type="103" groupAlignment="0" attributes="0">
                           <Group type="102" alignment="0" attributes="0">
-                              <EmptySpace min="-2" max="-2" attributes="0"/>
+                              <EmptySpace max="-2" attributes="0"/>
                               <Component id="jPanelSettingsGeneral" min="-2" max="-2" attributes="0"/>
-                              <EmptySpace type="unrelated" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace max="-2" attributes="0"/>
                               <Component id="jPanelSettingsSizing" min="-2" max="-2" attributes="0"/>
                               <EmptySpace min="-2" max="-2" attributes="0"/>
                               <Component id="jPanelInitialSettings" max="32767" attributes="0"/>
@@ -2619,7 +2639,10 @@
                           <Group type="103" groupAlignment="0" attributes="0">
                               <Group type="102" alignment="0" attributes="0">
                                   <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="jCheckBoxSettingsOpenAtReady" pref="309" max="32767" attributes="0"/>
+                                  <Group type="103" groupAlignment="0" attributes="0">
+                                      <Component id="jCheckBoxSettingsOpenAtReady" pref="391" max="32767" attributes="0"/>
+                                      <Component id="jPanelSettingsTimeOut" max="32767" attributes="0"/>
+                                  </Group>
                                   <EmptySpace max="-2" attributes="0"/>
                               </Group>
                           </Group>
@@ -2629,6 +2652,8 @@
                               <Group type="102" alignment="0" attributes="0">
                                   <EmptySpace max="-2" attributes="0"/>
                                   <Component id="jCheckBoxSettingsOpenAtReady" min="-2" max="-2" attributes="0"/>
+                                  <EmptySpace max="-2" attributes="0"/>
+                                  <Component id="jPanelSettingsTimeOut" min="-2" max="-2" attributes="0"/>
                                   <EmptySpace max="32767" attributes="0"/>
                               </Group>
                           </Group>
@@ -2645,6 +2670,40 @@
                             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jCheckBoxSettingsOpenAtReadyActionPerformed"/>
                           </Events>
                         </Component>
+                        <Container class="javax.swing.JPanel" name="jPanelSettingsTimeOut">
+
+                          <Layout class="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout"/>
+                          <SubComponents>
+                            <Component class="javax.swing.JCheckBox" name="jCheckBoxSettingsUseMaxTimeout">
+                              <Properties>
+                                <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
+                                  <ResourceString bundle="ConsoleGUI.properties" key="jCheckBoxSettingsUseMaxTimeout" replaceFormat="java.util.ResourceBundle.getBundle(&quot;{bundleNameSlashes}&quot;).getString(&quot;{key}&quot;)"/>
+                                </Property>
+                              </Properties>
+                              <Events>
+                                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jCheckBoxSettingsUseMaxTimeoutActionPerformed"/>
+                              </Events>
+                              <Constraints>
+                                <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout" value="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout$BorderConstraintsDescription">
+                                  <BorderConstraints direction="Center"/>
+                                </Constraint>
+                              </Constraints>
+                            </Component>
+                            <Component class="javax.swing.JTextField" name="jTextFieldMaxTimeOut">
+                              <Properties>
+                                <Property name="columns" type="int" value="10"/>
+                              </Properties>
+                              <Events>
+                                <EventHandler event="keyReleased" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="jTextFieldMaxTimeOutKeyReleased"/>
+                              </Events>
+                              <Constraints>
+                                <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout" value="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout$BorderConstraintsDescription">
+                                  <BorderConstraints direction="East"/>
+                                </Constraint>
+                              </Constraints>
+                            </Component>
+                          </SubComponents>
+                        </Container>
                       </SubComponents>
                     </Container>
                     <Container class="javax.swing.JPanel" name="jPanelSettingsSizing">
@@ -2773,7 +2832,7 @@
                                   <EmptySpace max="-2" attributes="0"/>
                                   <Component id="jPanelTMEX" min="-2" max="-2" attributes="0"/>
                                   <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="jScrollPane8" pref="38" max="32767" attributes="0"/>
+                                  <Component id="jScrollPane8" pref="87" max="32767" attributes="0"/>
                                   <EmptySpace max="-2" attributes="0"/>
                               </Group>
                           </Group>

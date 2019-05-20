@@ -2,11 +2,13 @@ package main;
 
 import cheats.Cheat;
 import gui.*;
+import sim.*;
 import settings.*;
 import gui.autocomplete.*;
 import gui.checklistitem.*;
 import gui.initialsettings.*;
 import gui.menuitem.*;
+import gui.sim.*;
 import java.awt.event.KeyEvent;
 
 import java.io.BufferedReader;
@@ -22,15 +24,22 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
 import javax.imageio.ImageIO;
+import sim.Sim.Species;
 
 /**
  * ConsoleGUI Java GUI application which provides an interface between the Sims
@@ -41,7 +50,7 @@ import javax.imageio.ImageIO;
  * @author Dominic Micheletto
  * @version 1.0.0
  */
-public class ConsoleGUI extends javax.swing.JFrame {
+public class ConsoleGUI extends javax.swing.JFrame implements CommandStateListener {
 
     /**
      * The version of ConsoleGUI - Major, Minor, Revision
@@ -722,6 +731,16 @@ public class ConsoleGUI extends javax.swing.JFrame {
             });
         }
         
+        if (ConsoleGUI.settings.maxTimeout != -1) {
+            this.jCheckBoxSettingsUseMaxTimeout.setSelected(true);
+            this.jTextFieldMaxTimeOut.setEnabled(true);
+            this.jTextFieldMaxTimeOut.setText(String.valueOf(ConsoleGUI.settings.maxTimeout));
+        }
+        else {
+            this.jCheckBoxSettingsUseMaxTimeout.setSelected(false);
+            this.jTextFieldMaxTimeOut.setEnabled(false);
+            this.jTextFieldMaxTimeOut.setText("");
+        }
     }
 
     private void createDocumentForConsole() {
@@ -739,6 +758,8 @@ public class ConsoleGUI extends javax.swing.JFrame {
                 ConsoleGUI.getHexStringForColour(colours.get("Output"))));
         stylesheet.addRule(String.format("span.error { color: #%s; }",
                 ConsoleGUI.getHexStringForColour(colours.get("Error"))));
+        stylesheet.addRule(String.format("span.timedout { color: #%s; }",
+                ConsoleGUI.getHexStringForColour(colours.get("Timed Out"))));
 
         this.jEditorPaneConsoleOutput.setEditorKit(kit);
         this.jEditorPaneConsoleOutput.setDocument(kit.createDefaultDocument());
@@ -749,6 +770,11 @@ public class ConsoleGUI extends javax.swing.JFrame {
         this.jTextFieldConsolePrompt.setFont(this.currentSettings.getFont());
     }
 
+    @Override
+    public void commandStateChanged(CommandStateChangedEvent evt) {
+        
+    }
+    
     private void setConnected(boolean connected) {
         final javax.swing.JComponent components[] = {
             this.jCheckBoxMenuItemCheatsConsole,
@@ -784,7 +810,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
             this.waitForReady();
     }
     
-    private HashMap<String, Long> simsNameToIdMap = new HashMap<>();
+    private HashMap<String, Sim> simsMap = new HashMap<>();
     private void waitForReady() {
         ((Runnable) new Runnable() {
             @Override
@@ -827,10 +853,8 @@ public class ConsoleGUI extends javax.swing.JFrame {
                                     
                                     var data = line.split("\0");
                                     var name = data[0];
-                                    var id = Long.parseLong(data[1]);
-                                    var species = Boolean.getBoolean(data[2]);
                                     
-                                    that.simsNameToIdMap.put(name, id);
+                                    that.simsMap.put(name, new Sim(line));
                                     that.jProgressBarStatus.setValue(i);
                                 }
                             }
@@ -937,7 +961,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
                             port, this.server, this.clientSocket, this.echoSocket,
                             new PrintWriter(this.clientSocket.getOutputStream()), in
                     );
-
+                    
                     System.out.println(line);
                     ConsoleGUI.this.protocol.currentState = CommandProtocol.CommandState.CONNECTED_NOT_READY;
 
@@ -954,15 +978,14 @@ public class ConsoleGUI extends javax.swing.JFrame {
             @Override
             public void run() {
                 if (this.echoSocket == null || this.clientSocket == null) {
-                    try (
-                            var _server = new ServerSocket(port, 2);) {
+                    try (var _server = new ServerSocket(port, 2);) {
                         this.server = _server;
                         _server.setSoTimeout(2000);
                         this.echoSocket = _server.accept();
                         ConsoleGUI.this.setConnected(this.testConnection());
                     } catch (IOException ex) {
                         ConsoleGUI.this.setConnected(false);
-                        if (DEBUG_MODE) {
+                        if (ConsoleGUI.DEBUG_MODE) {
                             System.out.println("Failed to connect");
                         }
                     }
@@ -1098,6 +1121,9 @@ public class ConsoleGUI extends javax.swing.JFrame {
         jPanelSettingsMiscellaneous = new javax.swing.JPanel();
         jPanelSettingsGeneral = new javax.swing.JPanel();
         jCheckBoxSettingsOpenAtReady = new javax.swing.JCheckBox();
+        jPanelSettingsTimeOut = new javax.swing.JPanel();
+        jCheckBoxSettingsUseMaxTimeout = new javax.swing.JCheckBox();
+        jTextFieldMaxTimeOut = new javax.swing.JTextField();
         jPanelSettingsSizing = new javax.swing.JPanel();
         jCheckBoxSettingsSaveWindowSize = new javax.swing.JCheckBox();
         jLabelSettingsWindowHeight = new javax.swing.JLabel();
@@ -1480,8 +1506,12 @@ public class ConsoleGUI extends javax.swing.JFrame {
         jLabelRelationshipMainSim.setLabelFor(jComboBoxRelationshipMainSim);
         jLabelRelationshipMainSim.setText(bundle1.getString("jLabelRelationshipMainSim")); // NOI18N
 
+        jComboBoxRelationshipMainSim.setRenderer(new SimItemListCellRenderer());
+
         jLabelRelationshipSecondarySim.setLabelFor(jComboBoxRelationshipSecondarySim);
         jLabelRelationshipSecondarySim.setText(bundle1.getString("jLabelRelationshipSecondarySim")); // NOI18N
+
+        jComboBoxRelationshipSecondarySim.setRenderer(new SimItemListCellRenderer());
 
         javax.swing.GroupLayout jPanelRelationshipSimChooserLayout = new javax.swing.GroupLayout(jPanelRelationshipSimChooser);
         jPanelRelationshipSimChooser.setLayout(jPanelRelationshipSimChooserLayout);
@@ -1512,15 +1542,72 @@ public class ConsoleGUI extends javax.swing.JFrame {
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
+        jComboBoxRelationshipMainSim.addActionListener(new java.awt.event.ActionListener() {
+            private SimItem currentItem;
+            private javax.swing.JComboBox<SimItem> parent;
+
+            {
+                this.parent = ConsoleGUI.this.jComboBoxRelationshipMainSim;
+                this.currentItem = null;
+            }
+
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                var selectedItem = this.parent.getSelectedItem();
+                if (selectedItem == null)
+                return;
+
+                if (selectedItem instanceof SimItemSeparator) {
+                    this.parent.setSelectedItem(this.currentItem);
+                }
+                else {
+                    this.currentItem = (SimItem) selectedItem;
+                    jComboBoxRelationshipMainSimActionPerformed(evt);
+                }
+            }
+        });
+        jComboBoxRelationshipSecondarySim.addActionListener(new java.awt.event.ActionListener() {
+            private SimItem currentItem;
+            private javax.swing.JComboBox<SimItem> parent;
+
+            {
+                this.parent = ConsoleGUI.this.jComboBoxRelationshipSecondarySim;
+                this.currentItem = null;
+            }
+
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                var selectedItem = this.parent.getSelectedItem();
+                if (selectedItem == null)
+                return;
+
+                if (selectedItem instanceof SimItemSeparator) {
+                    this.parent.setSelectedItem(this.currentItem);
+                }
+                else {
+                    this.currentItem = (SimItem) selectedItem;
+                    jComboBoxRelationshipSecondarySimActionPerformed(evt);
+                }
+            }
+        });
+
         jPanelRelationshipRelationshipType.setBorder(javax.swing.BorderFactory.createTitledBorder(bundle1.getString("jPanelRelationshipRelationshipType"))); // NOI18N
 
         buttonGroupRelationship.add(jRadioButtonRelationshipFriendly);
         jRadioButtonRelationshipFriendly.setSelected(true);
         jRadioButtonRelationshipFriendly.setText(bundle1.getString("jRadioButtonRelationshipFriendly")); // NOI18N
+        jRadioButtonRelationshipFriendly.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jRadioButtonRelationshipFriendlyActionPerformed(evt);
+            }
+        });
         jPanelRelationshipRelationshipType.add(jRadioButtonRelationshipFriendly);
 
         buttonGroupRelationship.add(jRadioButtonRelationshipRomantic);
         jRadioButtonRelationshipRomantic.setText(bundle1.getString("jRadioButtonRelationshipRomantic")); // NOI18N
+        jRadioButtonRelationshipRomantic.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jRadioButtonRelationshipRomanticActionPerformed(evt);
+            }
+        });
         jPanelRelationshipRelationshipType.add(jRadioButtonRelationshipRomantic);
 
         jPanelRelationshipRelationshipValue.setBorder(javax.swing.BorderFactory.createTitledBorder(bundle1.getString("jPanelRelationshipRelationshipValue"))); // NOI18N
@@ -1547,6 +1634,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
+        jButtonRelationshipOk.setMnemonic(java.util.ResourceBundle.getBundle("ConsoleGUI").getString("jButtonRelationshipOkMnemonic").charAt(0));
         jButtonRelationshipOk.setText(bundle1.getString("jButtonRelationshipOk")); // NOI18N
         jButtonRelationshipOk.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -1554,6 +1642,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
             }
         });
 
+        jButtonRelationshipCancel.setMnemonic(java.util.ResourceBundle.getBundle("ConsoleGUI").getString("jButtonRelationshipCancelMnemonic").charAt(0));
         jButtonRelationshipCancel.setText(bundle1.getString("jButtonRelationshipCancel")); // NOI18N
         jButtonRelationshipCancel.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -1759,7 +1848,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
                     .addComponent(jLabelConsolePrompt)
                     .addComponent(jTextFieldConsolePrompt, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 165, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 169, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -1995,7 +2084,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
                     .addGroup(jPanelSettingsEditorColourLayout.createSequentialGroup()
                         .addComponent(jLabelColourHexHash, javax.swing.GroupLayout.PREFERRED_SIZE, 7, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jFormattedTextFieldSettingsEditorColour, javax.swing.GroupLayout.DEFAULT_SIZE, 61, Short.MAX_VALUE)
+                        .addComponent(jFormattedTextFieldSettingsEditorColour, javax.swing.GroupLayout.DEFAULT_SIZE, 151, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jLabelSettingsColourPreview, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -2063,7 +2152,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
                 .addGap(2, 2, 2)
                 .addComponent(jLabelSettingsPreview)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 38, Short.MAX_VALUE)
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 110, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -2154,7 +2243,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
             .addGroup(jPanelSettingsMenuItemShortcutLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanelSettingsMenuItemShortcutLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jPanelSettingsShortcutControlKeys, javax.swing.GroupLayout.DEFAULT_SIZE, 277, Short.MAX_VALUE)
+                    .addComponent(jPanelSettingsShortcutControlKeys, javax.swing.GroupLayout.DEFAULT_SIZE, 367, Short.MAX_VALUE)
                     .addGroup(jPanelSettingsMenuItemShortcutLayout.createSequentialGroup()
                         .addComponent(jLabelSettingsKey)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -2342,7 +2431,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(jPanelSystemTrayMenuLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabelSystemTrayMenu, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jScrollPane6, javax.swing.GroupLayout.DEFAULT_SIZE, 301, Short.MAX_VALUE))
+                    .addComponent(jScrollPane6, javax.swing.GroupLayout.DEFAULT_SIZE, 391, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanelSystemTrayMenuLayout.setVerticalGroup(
@@ -2351,7 +2440,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
                 .addContainerGap()
                 .addComponent(jLabelSystemTrayMenu)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane6, javax.swing.GroupLayout.DEFAULT_SIZE, 55, Short.MAX_VALUE)
+                .addComponent(jScrollPane6, javax.swing.GroupLayout.DEFAULT_SIZE, 127, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -2374,7 +2463,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
             .addGroup(jPanelSettingsKeyBindingsLayout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jPanelSettingsMenuBindings, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(132, Short.MAX_VALUE))
+                .addContainerGap(204, Short.MAX_VALUE))
             .addGroup(jPanelSettingsKeyBindingsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelSettingsKeyBindingsLayout.createSequentialGroup()
                     .addGap(200, 200, 200)
@@ -2388,11 +2477,11 @@ public class ConsoleGUI extends javax.swing.JFrame {
         jPanelToolbar.setLayout(jPanelToolbarLayout);
         jPanelToolbarLayout.setHorizontalGroup(
             jPanelToolbarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 353, Short.MAX_VALUE)
+            .addGap(0, 443, Short.MAX_VALUE)
         );
         jPanelToolbarLayout.setVerticalGroup(
             jPanelToolbarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 325, Short.MAX_VALUE)
+            .addGap(0, 397, Short.MAX_VALUE)
         );
 
         jTabbedPaneSettings.addTab(bundle1.getString("jPanelToolbar"), jPanelToolbar); // NOI18N
@@ -2401,11 +2490,11 @@ public class ConsoleGUI extends javax.swing.JFrame {
         jPanelSettingsEditor.setLayout(jPanelSettingsEditorLayout);
         jPanelSettingsEditorLayout.setHorizontalGroup(
             jPanelSettingsEditorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 353, Short.MAX_VALUE)
+            .addGap(0, 443, Short.MAX_VALUE)
         );
         jPanelSettingsEditorLayout.setVerticalGroup(
             jPanelSettingsEditorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 325, Short.MAX_VALUE)
+            .addGap(0, 397, Short.MAX_VALUE)
         );
 
         jTabbedPaneSettings.addTab(bundle.getString("jPanelSettingsEditor"), jPanelSettingsEditor); // NOI18N
@@ -2419,13 +2508,33 @@ public class ConsoleGUI extends javax.swing.JFrame {
             }
         });
 
+        jPanelSettingsTimeOut.setLayout(new java.awt.BorderLayout());
+
+        jCheckBoxSettingsUseMaxTimeout.setText(bundle1.getString("jCheckBoxSettingsUseMaxTimeout")); // NOI18N
+        jCheckBoxSettingsUseMaxTimeout.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBoxSettingsUseMaxTimeoutActionPerformed(evt);
+            }
+        });
+        jPanelSettingsTimeOut.add(jCheckBoxSettingsUseMaxTimeout, java.awt.BorderLayout.CENTER);
+
+        jTextFieldMaxTimeOut.setColumns(10);
+        jTextFieldMaxTimeOut.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                jTextFieldMaxTimeOutKeyReleased(evt);
+            }
+        });
+        jPanelSettingsTimeOut.add(jTextFieldMaxTimeOut, java.awt.BorderLayout.EAST);
+
         javax.swing.GroupLayout jPanelSettingsGeneralLayout = new javax.swing.GroupLayout(jPanelSettingsGeneral);
         jPanelSettingsGeneral.setLayout(jPanelSettingsGeneralLayout);
         jPanelSettingsGeneralLayout.setHorizontalGroup(
             jPanelSettingsGeneralLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanelSettingsGeneralLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jCheckBoxSettingsOpenAtReady, javax.swing.GroupLayout.DEFAULT_SIZE, 309, Short.MAX_VALUE)
+                .addGroup(jPanelSettingsGeneralLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jCheckBoxSettingsOpenAtReady, javax.swing.GroupLayout.DEFAULT_SIZE, 391, Short.MAX_VALUE)
+                    .addComponent(jPanelSettingsTimeOut, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanelSettingsGeneralLayout.setVerticalGroup(
@@ -2433,6 +2542,8 @@ public class ConsoleGUI extends javax.swing.JFrame {
             .addGroup(jPanelSettingsGeneralLayout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jCheckBoxSettingsOpenAtReady)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jPanelSettingsTimeOut, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
@@ -2563,7 +2674,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanelTMEX, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane8, javax.swing.GroupLayout.DEFAULT_SIZE, 38, Short.MAX_VALUE)
+                .addComponent(jScrollPane8, javax.swing.GroupLayout.DEFAULT_SIZE, 87, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -2584,7 +2695,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
             .addGroup(jPanelSettingsMiscellaneousLayout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jPanelSettingsGeneral, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanelSettingsSizing, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanelInitialSettings, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -3224,9 +3335,11 @@ public class ConsoleGUI extends javax.swing.JFrame {
                     this.jTextFieldConsolePrompt.setEnabled(false);
 
                     var result = this.executeCommand(command);
-
-                    this.history.addValue(command, result);
-
+                    if (result != null)
+                        this.history.addValue(command, result);
+                    else
+                        this.history.addValue(command, "OUTPUT: TIMED-OUT");
+                    
                     this.jEditorPaneConsoleOutput.setText(this.history.toString());
 
                     this.history.resetPosition(true);
@@ -3662,7 +3775,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
 
         list.repaint(list.getCellBounds(index, index));
     }//GEN-LAST:event_jListInitialSettingsMouseClicked
-
+    
     private void jButtonMCCCActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonMCCCActionPerformed
         this.jTableMCCCSettings.setModel(new javax.swing.table.DefaultTableModel() {
             {
@@ -3702,25 +3815,25 @@ public class ConsoleGUI extends javax.swing.JFrame {
     }//GEN-LAST:event_jButtonMCCCSettingsOkActionPerformed
 
     private void jMenuItemMotherlodeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemMotherlodeActionPerformed
-        this.executeCommand("motherlode");
+        new Thread(() -> this.executeCommand("motherlode")).start();
     }//GEN-LAST:event_jMenuItemMotherlodeActionPerformed
 
     private void jMenuItemRosebudActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemRosebudActionPerformed
-        this.executeCommand("rosebud");
+        new Thread(() -> this.executeCommand("rosebud")).start();
     }//GEN-LAST:event_jMenuItemRosebudActionPerformed
 
     private void jMenuItemClearMoneyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemClearMoneyActionPerformed
-        this.executeCommand("money 0");
+        new Thread(() -> this.executeCommand("money 0")).start();
     }//GEN-LAST:event_jMenuItemClearMoneyActionPerformed
 
     private void jMenuItemEnableFreeBuildActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemEnableFreeBuildActionPerformed
-        this.executeCommand("freebuild");
+        new Thread(() -> this.executeCommand("freebuild")).start();
     }//GEN-LAST:event_jMenuItemEnableFreeBuildActionPerformed
 
     private void jButtonTMexSettingsOkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonTMexSettingsOkActionPerformed
         this.jDialogTMexSettings.dispose();
     }//GEN-LAST:event_jButtonTMexSettingsOkActionPerformed
-
+    
     private void jButtonTMEXActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonTMEXActionPerformed
         this.jTableTMexSettings.setModel(new javax.swing.table.DefaultTableModel() {
             {
@@ -3838,17 +3951,89 @@ public class ConsoleGUI extends javax.swing.JFrame {
         this.jDialogMoneyChooser.dispose();
     }//GEN-LAST:event_jButtonMoneyChooserOkActionPerformed
 
+    private class SimConsumer implements Consumer<Sim> {
+        
+        private Species species;
+        private final javax.swing.JComboBox<SimItem> parent;
+        
+        public SimConsumer(javax.swing.JComboBox<SimItem> parent) {
+            this.species = null;
+            this.parent = parent;
+            
+            this.parent.removeAllItems();
+        }
+        
+        @Override
+        public void accept(Sim sim) {
+            if (!Objects.equals(this.species, sim.getSpecies())) {
+                var category = new SimItemSeparator(sim.getSpecies().toString());
+                this.parent.addItem(category);
+                
+                this.species = sim.getSpecies();
+            }
+            
+            var item = new SimItem(sim);
+            this.parent.addItem(item);
+        }
+        
+    }
+    
+    private ArrayList<Sim> simsList = new ArrayList<>();
     private void jMenuItemEditRelationshipActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemEditRelationshipActionPerformed
-        this.simsNameToIdMap.keySet().forEach((sim) ->
-                this.jComboBoxRelationshipMainSim.addItem(sim));
-        this.simsNameToIdMap.keySet().forEach((sim) ->
-                this.jComboBoxRelationshipSecondarySim.addItem(sim));
+        if (this.simsList.isEmpty())
+            this.simsList.addAll(this.simsMap.values());
+        
+        Collections.sort(this.simsList, new SimItemComparator());
+        this.simsList.forEach(new SimConsumer(this.jComboBoxRelationshipMainSim));
+        this.simsList.stream().filter((sim) -> !sim.equals(this.simsList.get(0)))
+                .forEach(new SimConsumer(this.jComboBoxRelationshipSecondarySim));
+        
+        this.jComboBoxRelationshipMainSim.setSelectedIndex(1);
+        this.jComboBoxRelationshipSecondarySim.setSelectedIndex(1);
         
         this.jDialogEditRelationship.pack();
-        this.jButtonRelationshipCancel.requestFocus();
+        this.jButtonRelationshipOk.requestFocus();
         this.jDialogEditRelationship.setVisible(true);
     }//GEN-LAST:event_jMenuItemEditRelationshipActionPerformed
 
+    private void populateSimsList() {
+        Collections.sort(this.simsList, new SimItemComparator());
+        
+        if (this.jRadioButtonRelationshipFriendly.isSelected()) {
+            var item = (SimItem) this.jComboBoxRelationshipMainSim.getSelectedItem();
+            var index = this.jComboBoxRelationshipMainSim.getSelectedIndex();
+            
+            this.simsList.stream().forEach(new SimConsumer(this.jComboBoxRelationshipMainSim));
+            this.simsList.stream().filter((sim) -> !sim.equals(item.getSim()))
+                    .forEach(new SimConsumer(this.jComboBoxRelationshipSecondarySim));
+
+            this.jComboBoxRelationshipMainSim.setSelectedIndex(index);
+            this.jComboBoxRelationshipSecondarySim.setSelectedIndex(1);
+        }
+        else {
+            var item = (SimItem) this.jComboBoxRelationshipMainSim.getSelectedItem();
+        
+            if (!item.getSim().getSpecies().equals(Species.HUMAN)) {
+                int i = 1;
+                var tempItem = (SimItem) this.jComboBoxRelationshipMainSim.getSelectedItem();
+                while (!tempItem.getSim().getSpecies().equals(Species.HUMAN)) {
+                    this.jComboBoxRelationshipMainSim.setSelectedIndex(i++);
+                    tempItem = (SimItem) this.jComboBoxRelationshipMainSim.getSelectedItem();
+                }
+            }
+            var index = this.jComboBoxRelationshipMainSim.getSelectedIndex();
+            
+            this.simsList.stream().filter((sim) -> sim.getSpecies().equals(Species.HUMAN))
+                    .forEach(new SimConsumer(this.jComboBoxRelationshipMainSim));
+            this.simsList.stream().filter((sim) -> !sim.equals(item.getSim()) &&
+                    sim.getSpecies().equals(Species.HUMAN))
+                    .forEach(new SimConsumer(this.jComboBoxRelationshipSecondarySim));
+
+            this.jComboBoxRelationshipMainSim.setSelectedIndex(index);
+            this.jComboBoxRelationshipSecondarySim.setSelectedIndex(1);
+        }
+    }
+    
     private void jButtonRelationshipCancelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonRelationshipCancelActionPerformed
         this.jDialogEditRelationship.dispose();
     }//GEN-LAST:event_jButtonRelationshipCancelActionPerformed
@@ -3865,12 +4050,64 @@ public class ConsoleGUI extends javax.swing.JFrame {
         String cheat1 = String.format(cheatCode, sim1, sim2, value, type);
         String cheat2 = String.format(cheatCode, sim2, sim1, value, type);
         
-        this.executeCommand(cheat1);
-        this.executeCommand(cheat2);
+        new Thread(() -> {this.executeCommand(cheat1); this.executeCommand(cheat2);}).start();
         
         this.jDialogEditRelationship.dispose();
     }//GEN-LAST:event_jButtonRelationshipOkActionPerformed
 
+    private void jRadioButtonRelationshipFriendlyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonRelationshipFriendlyActionPerformed
+        this.populateSimsList();
+    }//GEN-LAST:event_jRadioButtonRelationshipFriendlyActionPerformed
+
+    private void jRadioButtonRelationshipRomanticActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonRelationshipRomanticActionPerformed
+        this.populateSimsList();
+    }//GEN-LAST:event_jRadioButtonRelationshipRomanticActionPerformed
+
+    private void jCheckBoxSettingsUseMaxTimeoutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxSettingsUseMaxTimeoutActionPerformed
+        if (this.jCheckBoxSettingsUseMaxTimeout.isSelected()) {
+            if (this.jTextFieldMaxTimeOut.getText().isEmpty()) {
+                this.jTextFieldMaxTimeOut.setText(String.valueOf(Settings.DEFAULT_TIME_OUT));
+            }
+            this.jTextFieldMaxTimeOut.setEnabled(true);
+        }
+        else {
+            this.jTextFieldMaxTimeOut.setEnabled(false);
+            this.currentSettings.maxTimeout = -1;
+        }
+    }//GEN-LAST:event_jCheckBoxSettingsUseMaxTimeoutActionPerformed
+
+    private void jTextFieldMaxTimeOutKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldMaxTimeOutKeyReleased
+        String text = this.jTextFieldMaxTimeOut.getText();
+        
+        try {
+            var value = Integer.parseInt(text);
+            
+            if (Settings.MIN_TIME_OUT <= value && value <= Settings.MAX_TIME_OUT)
+                this.currentSettings.maxTimeout = value;
+            else
+                throw new NumberFormatException();
+            
+            this.jTextFieldMaxTimeOut.setBackground(java.awt.Color.WHITE);
+            this.currentSettings.isInValidState = true;
+        }
+        catch (NumberFormatException ex) {
+            this.jTextFieldMaxTimeOut.setBackground(new java.awt.Color(255, 128, 128));
+            this.currentSettings.isInValidState = false;
+        }
+        
+        this.determineIfSettingsChanged();
+        if (evt.getKeyCode() != java.awt.event.KeyEvent.VK_ENTER)
+            this.jTextFieldMaxTimeOut.requestFocus();
+    }//GEN-LAST:event_jTextFieldMaxTimeOutKeyReleased
+
+    private void jComboBoxRelationshipMainSimActionPerformed(java.awt.event.ActionEvent evt) {                                                             
+        this.populateSimsList();
+    }
+    
+    private void jComboBoxRelationshipSecondarySimActionPerformed(java.awt.event.ActionEvent evt) {                                                             
+        
+    }
+    
     private void jListSystemTrayMenuMouseClicked(java.awt.event.MouseEvent evt) {
         var list = (javax.swing.JList<CheckListItem>) evt.getSource();
         int index = list.locationToIndex(evt.getPoint());
@@ -3925,27 +4162,55 @@ public class ConsoleGUI extends javax.swing.JFrame {
 
     private String executeCommand(String command) {
         var bundle = java.util.ResourceBundle.getBundle("ConsoleGUI");
-
-        this.jLabelCommandStatus.setText(bundle.getString("jLabelCommandStatusExecuting"));
-        this.jProgressBarStatus.setVisible(true);
-        this.jSeparator1.setVisible(true);
-
-        this.connData.out.format("COMMAND: %s\n", command);
-        this.connData.out.flush();
-
+        var executor = Executors.newSingleThreadScheduledExecutor();
+        var timeout = ConsoleGUI.settings.maxTimeout;
+        
+        var value = executor.submit(() -> {
+            var that = ConsoleGUI.this;
+            
+            that.connData.out.format("COMMAND: %s\n", command);
+            that.connData.out.flush();
+            
+            try {
+                return that.connData.in.readLine();
+            } catch (IOException ex) {
+                return null;
+            }
+        });
+        
+        executor.shutdown();
+        
         try {
-            var result = this.connData.in.readLine();
-            this.jLabelCommandStatus.setText(bundle.getString("jLabelCommandStatusDone"));
-
+            this.jLabelCommandStatus.setText(bundle.getString("jLabelCommandStatusExecuting"));
+            this.jProgressBarStatus.setVisible(true);
+            this.jSeparator1.setVisible(true);
+            
+            var result = timeout == -1 ? value.get() : value.get(timeout, TimeUnit.MILLISECONDS);
+            if (result != null) {
+                this.jLabelCommandStatus.setText(bundle.getString("jLabelCommandStatusDone"));
+            }
+            else {
+                this.jLabelCommandStatus.setText(bundle.getString("jLabelCommandStatusFailed"));
+            }
+            
             return result;
-        } catch (IOException ex) {
-            Logger.getLogger(ConsoleGUI.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InterruptedException | ExecutionException ex) {
+            Logger.getLogger(ConsoleGUI.class.getName()).log(Level.WARNING, null, ex);
             this.jLabelCommandStatus.setText(bundle.getString("jLabelCommandStatusFailed"));
-        } finally {
+        }
+        catch (TimeoutException ex) {
+            value.cancel(true);
+            javax.swing.JOptionPane.showMessageDialog(this, 
+                    bundle.getString("ExecutionTimedOutMessage"),
+                    bundle.getString("ExecutionTimedOutTitle"),
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+            this.jLabelCommandStatus.setText(bundle.getString("jLabelCommandStatusTimedOut"));
+        }
+        finally {
             this.jProgressBarStatus.setVisible(false);
             this.jSeparator1.setVisible(false);
         }
-
+        
         return null;
     }
 
@@ -3983,6 +4248,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
         previewHistory.addValue("money", "OUTPUT: FAILURE: Command missing required "
                 + "parameter: amount &lt;type: int&gt;");
         previewHistory.addValue("cas.fulleditmode", "OUTPUT: NO-OP");
+        previewHistory.addValue("relationships.introduce_sim_to_all_others", "OUTPUT: TIMED-OUT");
 
         this.jEditorPaneSettingsAppearancePreview.setText(previewHistory.toString());
         this.jEditorPaneSettingsAppearancePreview.setCaretPosition(0);
@@ -4149,9 +4415,10 @@ public class ConsoleGUI extends javax.swing.JFrame {
     private javax.swing.JCheckBox jCheckBoxSettingsOpenAtReady;
     private javax.swing.JCheckBox jCheckBoxSettingsSaveWindowSize;
     private javax.swing.JCheckBox jCheckBoxSettingsShift;
+    private javax.swing.JCheckBox jCheckBoxSettingsUseMaxTimeout;
     private javax.swing.JCheckBox jCheckBoxTMEX;
-    private javax.swing.JComboBox<String> jComboBoxRelationshipMainSim;
-    private javax.swing.JComboBox<String> jComboBoxRelationshipSecondarySim;
+    private javax.swing.JComboBox<SimItem> jComboBoxRelationshipMainSim;
+    private javax.swing.JComboBox<SimItem> jComboBoxRelationshipSecondarySim;
     private javax.swing.JComboBox<String> jComboBoxSettingsEditorColourCategory;
     private javax.swing.JComboBox<String> jComboBoxSettingsFontFamily;
     private javax.swing.JComboBox<Integer> jComboBoxSettingsFontSize;
@@ -4254,6 +4521,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
     private javax.swing.JPanel jPanelSettingsOkApplyCancel;
     private javax.swing.JPanel jPanelSettingsShortcutControlKeys;
     private javax.swing.JPanel jPanelSettingsSizing;
+    private javax.swing.JPanel jPanelSettingsTimeOut;
     private javax.swing.JPanel jPanelSystemTrayMenu;
     private javax.swing.JPanel jPanelTMEX;
     private javax.swing.JPanel jPanelToolbar;
@@ -4296,6 +4564,7 @@ public class ConsoleGUI extends javax.swing.JFrame {
     private javax.swing.JTable jTableTMexSettings;
     private javax.swing.JTextField jTextFieldConsolePrompt;
     private javax.swing.JTextField jTextFieldKeyStroke;
+    private javax.swing.JTextField jTextFieldMaxTimeOut;
     private javax.swing.JTextField jTextFieldSettingsWindowHeight;
     private javax.swing.JTextField jTextFieldSettingsWindowWidth;
     private javax.swing.JToggleButton jToggleButtonCheatsConsole;

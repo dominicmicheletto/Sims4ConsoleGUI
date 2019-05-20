@@ -60,18 +60,30 @@ public class ConsoleHistory {
                 + "%s</div>";
         String outputString = "<blockquote><p><span class='%s'>%s</span></p></blockquote>";
         String commandOutput = String.format(formatString, promptHeader, "%s", outputString);
+        var bundle = java.util.ResourceBundle.getBundle("ConsoleGUI");
 
         for (int i = 0; i < this.history.size(); i++) {
             var command = this.history.get(i);
             var result = this.output.get(i);
 
-            if (result.equals("OUTPUT: NO-OP")) {
-                builder.append(String.format(formatString, promptHeader, command, ""));
-            } else {
-                var state = result.contains("SUCCESS") ? "success" : "error";
-                result = result.replace("OUTPUT: ", "")
-                        .replace("SUCCESS: ", "").replace("FAILURE: ", "");
-                builder.append(String.format(commandOutput, command, state, result));
+            switch (result) {
+                case "OUTPUT: NO-OP": {
+                    builder.append(String.format(formatString, promptHeader, command, ""));
+                    break;
+                }
+                case "OUTPUT: TIMED-OUT": {
+                    var state = "timedout";
+                    builder.append(String.format(commandOutput, command, state,
+                            bundle.getString("TimedOutMessage")));
+                    break;
+                }
+                default: {
+                    var state = result.contains("SUCCESS") ? "success" : "error";
+                    result = result.replace("OUTPUT: ", "")
+                            .replace("SUCCESS: ", "").replace("FAILURE: ", "");
+                    builder.append(String.format(commandOutput, command, state, result));
+                    break;
+                }
             }
         }
 

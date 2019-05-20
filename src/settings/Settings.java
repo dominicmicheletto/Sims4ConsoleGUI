@@ -33,12 +33,17 @@ public class Settings implements Serializable, Cloneable {
     public HashMap<String, KeyBinding> keyBindings;
     public HashSet<String> quickCheats;
     public HashMap<String, Boolean> initialSettings;
+    
+    public static final int MAX_TIME_OUT = 1000 * 60 * 5;
+    public static final int MIN_TIME_OUT = 1000;
+    public static final int DEFAULT_TIME_OUT = 5000;
+    public int maxTimeout;
 
     public transient boolean isInValidState;
     public transient HashMap<String, Boolean> mcccSettings;
     public transient HashMap<String, Boolean> tmexSettings;
 
-    private static final long VERSION_OFFSET = 1;
+    private static final long VERSION_OFFSET = 0;
     private static final long serialVersionUID = -8308417833864101145L + VERSION_OFFSET;
 
     public static HashMap<String, KeyBinding> get_default_keybindings() {
@@ -140,7 +145,8 @@ public class Settings implements Serializable, Cloneable {
 
         this.colours.put("Prompt", new java.awt.Color(0, 0, 0));
         this.colours.put("Output", new java.awt.Color(0, 153, 0));
-        this.colours.put("Error", new java.awt.Color(255, 0, 0));
+        this.colours.put("Error", new java.awt.Color(153, 0, 0));
+        this.colours.put("Timed Out", new java.awt.Color(0, 0, 153));
 
         this.savePreviousDimension = false;
         this.defaultDimension = MINIMUM_SIZE;
@@ -148,27 +154,37 @@ public class Settings implements Serializable, Cloneable {
         this.keyBindings = Settings.get_default_keybindings();
         this.quickCheats = Settings.get_default_quickcheats();
         this.initialSettings = Settings.get_default_initial_settings();
+        
+        this.maxTimeout = DEFAULT_TIME_OUT;
     }
 
     public Settings(String fontName, float fontSize, boolean openAtReady,
             String lookAndFeel, HashMap<String, java.awt.Color> colours,
             boolean savePreviousDimension, java.awt.Dimension defaultDimension,
             HashMap<String, KeyBinding> keyBindings,
-            HashSet<String> quickCheats, HashMap<String, Boolean> initialSettings) {
+            HashSet<String> quickCheats, HashMap<String, Boolean> initialSettings,
+            int maxOffset) {
         this.isInValidState = true;
         this.mcccSettings = null;
         this.tmexSettings = null;
 
         this.fontName = fontName;
         this.fontSize = fontSize;
+        
         this.openAtReady = openAtReady;
+        
         this.lookAndFeel = lookAndFeel;
+        
         this.colours = colours;
+        
         this.savePreviousDimension = savePreviousDimension;
         this.defaultDimension = defaultDimension;
+        
         this.keyBindings = keyBindings;
         this.quickCheats = quickCheats;
         this.initialSettings = initialSettings;
+        
+        this.maxTimeout = maxOffset;
     }
 
     @Override
@@ -241,6 +257,7 @@ public class Settings implements Serializable, Cloneable {
         out.writeObject(this.keyBindings);
         out.writeObject(this.quickCheats);
         out.writeObject(this.initialSettings);
+        out.writeInt(this.maxTimeout);
     }
 
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
@@ -254,6 +271,7 @@ public class Settings implements Serializable, Cloneable {
         this.keyBindings = (HashMap<String, KeyBinding>) in.readObject();
         this.quickCheats = (HashSet<String>) in.readObject();
         this.initialSettings = (HashMap<String, Boolean>) in.readObject();
+        this.maxTimeout = in.readInt();
     }
 
     private void readObjectNoData() throws ObjectStreamException {
@@ -272,6 +290,7 @@ public class Settings implements Serializable, Cloneable {
         hash = 31 * hash + Objects.hashCode(this.keyBindings);
         hash = 31 * hash + Objects.hashCode(this.quickCheats);
         hash = 31 * hash + Objects.hashCode(this.initialSettings);
+        hash = 31 * hash + this.maxTimeout;
         return hash;
     }
 
@@ -314,7 +333,10 @@ public class Settings implements Serializable, Cloneable {
         if (!Objects.equals(this.quickCheats, other.quickCheats)) {
             return false;
         }
-        return Objects.equals(this.initialSettings, other.initialSettings);
+        if (!Objects.equals(this.initialSettings, other.initialSettings)) {
+            return false;
+        }
+        return this.maxTimeout == other.maxTimeout;
     }
 
     @Override
@@ -330,6 +352,7 @@ public class Settings implements Serializable, Cloneable {
                 + ", keyBindings=" + keyBindings
                 + ", quickCheats=" + quickCheats
                 + ", initialSettings=" + initialSettings
+                + ", maxOffset=" + maxTimeout
                 + '}';
     }
 
