@@ -38,6 +38,8 @@ public class Settings implements Serializable, Cloneable {
     public static final int MIN_TIME_OUT = 1000;
     public static final int DEFAULT_TIME_OUT = 5000;
     public int maxTimeout;
+    
+    private boolean useNonEssentialQueries;
 
     public transient boolean isInValidState;
     public transient HashMap<String, Boolean> mcccSettings;
@@ -156,6 +158,8 @@ public class Settings implements Serializable, Cloneable {
         this.initialSettings = Settings.get_default_initial_settings();
         
         this.maxTimeout = DEFAULT_TIME_OUT;
+        
+        this.useNonEssentialQueries = true;
     }
 
     public Settings(String fontName, float fontSize, boolean openAtReady,
@@ -163,7 +167,7 @@ public class Settings implements Serializable, Cloneable {
             boolean savePreviousDimension, java.awt.Dimension defaultDimension,
             HashMap<String, KeyBinding> keyBindings,
             HashSet<String> quickCheats, HashMap<String, Boolean> initialSettings,
-            int maxOffset) {
+            int maxOffset, boolean useNonEssentialQueries) {
         this.isInValidState = true;
         this.mcccSettings = null;
         this.tmexSettings = null;
@@ -185,6 +189,8 @@ public class Settings implements Serializable, Cloneable {
         this.initialSettings = initialSettings;
         
         this.maxTimeout = maxOffset;
+        
+        this.useNonEssentialQueries = useNonEssentialQueries;
     }
 
     @Override
@@ -245,6 +251,14 @@ public class Settings implements Serializable, Cloneable {
     public void defaultDimension(java.awt.Dimension defaultDimension) {
         this.defaultDimension = defaultDimension;
     }
+    
+    public boolean useNonEssentialQueries() {
+        return this.useNonEssentialQueries;
+    }
+    
+    public void useNonEssentialQueries(boolean useNonEssentialQueries) {
+        this.useNonEssentialQueries = useNonEssentialQueries;
+    }
 
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeUTF(this.fontName);
@@ -258,6 +272,7 @@ public class Settings implements Serializable, Cloneable {
         out.writeObject(this.quickCheats);
         out.writeObject(this.initialSettings);
         out.writeInt(this.maxTimeout);
+        out.writeBoolean(this.useNonEssentialQueries);
     }
 
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
@@ -272,6 +287,7 @@ public class Settings implements Serializable, Cloneable {
         this.quickCheats = (HashSet<String>) in.readObject();
         this.initialSettings = (HashMap<String, Boolean>) in.readObject();
         this.maxTimeout = in.readInt();
+        this.useNonEssentialQueries = in.readBoolean();
     }
 
     private void readObjectNoData() throws ObjectStreamException {
@@ -291,6 +307,7 @@ public class Settings implements Serializable, Cloneable {
         hash = 31 * hash + Objects.hashCode(this.quickCheats);
         hash = 31 * hash + Objects.hashCode(this.initialSettings);
         hash = 31 * hash + this.maxTimeout;
+        hash = 31 * hash + (this.useNonEssentialQueries ? 1 : 0);
         return hash;
     }
 
@@ -336,7 +353,10 @@ public class Settings implements Serializable, Cloneable {
         if (!Objects.equals(this.initialSettings, other.initialSettings)) {
             return false;
         }
-        return this.maxTimeout == other.maxTimeout;
+        if (this.maxTimeout != other.maxTimeout) {
+            return false;
+        }
+        return this.useNonEssentialQueries == other.useNonEssentialQueries;
     }
 
     @Override
@@ -353,6 +373,7 @@ public class Settings implements Serializable, Cloneable {
                 + ", quickCheats=" + quickCheats
                 + ", initialSettings=" + initialSettings
                 + ", maxOffset=" + maxTimeout
+                + ", useNonEssentialQueries=" + useNonEssentialQueries
                 + '}';
     }
 

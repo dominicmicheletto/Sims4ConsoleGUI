@@ -2638,12 +2638,18 @@
                         <DimensionLayout dim="0">
                           <Group type="103" groupAlignment="0" attributes="0">
                               <Group type="102" alignment="0" attributes="0">
-                                  <EmptySpace max="-2" attributes="0"/>
+                                  <EmptySpace min="-2" max="-2" attributes="0"/>
                                   <Group type="103" groupAlignment="0" attributes="0">
-                                      <Component id="jCheckBoxSettingsOpenAtReady" pref="391" max="32767" attributes="0"/>
-                                      <Component id="jPanelSettingsTimeOut" max="32767" attributes="0"/>
+                                      <Component id="jSeparator16" alignment="1" max="32767" attributes="0"/>
+                                      <Group type="102" attributes="0">
+                                          <Group type="103" groupAlignment="0" attributes="0">
+                                              <Component id="jCheckBoxSettingsUSeNonEssentialQueries" max="32767" attributes="0"/>
+                                              <Component id="jCheckBoxSettingsOpenAtReady" pref="391" max="32767" attributes="0"/>
+                                              <Component id="jPanelSettingsTimeOut" max="32767" attributes="0"/>
+                                          </Group>
+                                          <EmptySpace max="-2" attributes="0"/>
+                                      </Group>
                                   </Group>
-                                  <EmptySpace max="-2" attributes="0"/>
                               </Group>
                           </Group>
                         </DimensionLayout>
@@ -2654,7 +2660,11 @@
                                   <Component id="jCheckBoxSettingsOpenAtReady" min="-2" max="-2" attributes="0"/>
                                   <EmptySpace max="-2" attributes="0"/>
                                   <Component id="jPanelSettingsTimeOut" min="-2" max="-2" attributes="0"/>
+                                  <EmptySpace max="-2" attributes="0"/>
+                                  <Component id="jSeparator16" min="-2" pref="10" max="-2" attributes="0"/>
                                   <EmptySpace max="32767" attributes="0"/>
+                                  <Component id="jCheckBoxSettingsUSeNonEssentialQueries" min="-2" max="-2" attributes="0"/>
+                                  <EmptySpace max="-2" attributes="0"/>
                               </Group>
                           </Group>
                         </DimensionLayout>
@@ -2704,6 +2714,21 @@
                             </Component>
                           </SubComponents>
                         </Container>
+                        <Component class="javax.swing.JSeparator" name="jSeparator16">
+                        </Component>
+                        <Component class="javax.swing.JCheckBox" name="jCheckBoxSettingsUSeNonEssentialQueries">
+                          <Properties>
+                            <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
+                              <ResourceString bundle="ConsoleGUI.properties" key="jCheckBoxSettingsUseNonEssentialQueries" replaceFormat="java.util.ResourceBundle.getBundle(&quot;{bundleNameSlashes}&quot;).getString(&quot;{key}&quot;)"/>
+                            </Property>
+                            <Property name="toolTipText" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
+                              <ResourceString bundle="ConsoleGUI.properties" key="jCheckBoxSettingsUseNonEssentialQueriesToolTip" replaceFormat="java.util.ResourceBundle.getBundle(&quot;{bundleNameSlashes}&quot;).getString(&quot;{key}&quot;)"/>
+                            </Property>
+                          </Properties>
+                          <Events>
+                            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jCheckBoxSettingsUSeNonEssentialQueriesActionPerformed"/>
+                          </Events>
+                        </Component>
                       </SubComponents>
                     </Container>
                     <Container class="javax.swing.JPanel" name="jPanelSettingsSizing">
@@ -2832,7 +2857,7 @@
                                   <EmptySpace max="-2" attributes="0"/>
                                   <Component id="jPanelTMEX" min="-2" max="-2" attributes="0"/>
                                   <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="jScrollPane8" pref="87" max="32767" attributes="0"/>
+                                  <Component id="jScrollPane8" pref="52" max="32767" attributes="0"/>
                                   <EmptySpace max="-2" attributes="0"/>
                               </Group>
                           </Group>

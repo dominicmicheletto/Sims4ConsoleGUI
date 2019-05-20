@@ -24,6 +24,7 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Objects;
@@ -741,6 +742,8 @@ public class ConsoleGUI extends javax.swing.JFrame implements CommandStateListen
             this.jTextFieldMaxTimeOut.setEnabled(false);
             this.jTextFieldMaxTimeOut.setText("");
         }
+        
+        this.jCheckBoxSettingsUSeNonEssentialQueries.setSelected(ConsoleGUI.settings.useNonEssentialQueries());
     }
 
     private void createDocumentForConsole() {
@@ -1124,6 +1127,8 @@ public class ConsoleGUI extends javax.swing.JFrame implements CommandStateListen
         jPanelSettingsTimeOut = new javax.swing.JPanel();
         jCheckBoxSettingsUseMaxTimeout = new javax.swing.JCheckBox();
         jTextFieldMaxTimeOut = new javax.swing.JTextField();
+        jSeparator16 = new javax.swing.JSeparator();
+        jCheckBoxSettingsUSeNonEssentialQueries = new javax.swing.JCheckBox();
         jPanelSettingsSizing = new javax.swing.JPanel();
         jCheckBoxSettingsSaveWindowSize = new javax.swing.JCheckBox();
         jLabelSettingsWindowHeight = new javax.swing.JLabel();
@@ -2526,6 +2531,14 @@ public class ConsoleGUI extends javax.swing.JFrame implements CommandStateListen
         });
         jPanelSettingsTimeOut.add(jTextFieldMaxTimeOut, java.awt.BorderLayout.EAST);
 
+        jCheckBoxSettingsUSeNonEssentialQueries.setText(bundle1.getString("jCheckBoxSettingsUseNonEssentialQueries")); // NOI18N
+        jCheckBoxSettingsUSeNonEssentialQueries.setToolTipText(bundle1.getString("jCheckBoxSettingsUseNonEssentialQueriesToolTip")); // NOI18N
+        jCheckBoxSettingsUSeNonEssentialQueries.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBoxSettingsUSeNonEssentialQueriesActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanelSettingsGeneralLayout = new javax.swing.GroupLayout(jPanelSettingsGeneral);
         jPanelSettingsGeneral.setLayout(jPanelSettingsGeneralLayout);
         jPanelSettingsGeneralLayout.setHorizontalGroup(
@@ -2533,9 +2546,13 @@ public class ConsoleGUI extends javax.swing.JFrame implements CommandStateListen
             .addGroup(jPanelSettingsGeneralLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanelSettingsGeneralLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jCheckBoxSettingsOpenAtReady, javax.swing.GroupLayout.DEFAULT_SIZE, 391, Short.MAX_VALUE)
-                    .addComponent(jPanelSettingsTimeOut, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap())
+                    .addComponent(jSeparator16, javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(jPanelSettingsGeneralLayout.createSequentialGroup()
+                        .addGroup(jPanelSettingsGeneralLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jCheckBoxSettingsUSeNonEssentialQueries, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jCheckBoxSettingsOpenAtReady, javax.swing.GroupLayout.DEFAULT_SIZE, 391, Short.MAX_VALUE)
+                            .addComponent(jPanelSettingsTimeOut, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addContainerGap())))
         );
         jPanelSettingsGeneralLayout.setVerticalGroup(
             jPanelSettingsGeneralLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -2544,7 +2561,11 @@ public class ConsoleGUI extends javax.swing.JFrame implements CommandStateListen
                 .addComponent(jCheckBoxSettingsOpenAtReady)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanelSettingsTimeOut, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jSeparator16, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jCheckBoxSettingsUSeNonEssentialQueries)
+                .addContainerGap())
         );
 
         jPanelSettingsSizing.setBorder(javax.swing.BorderFactory.createTitledBorder(bundle.getString("jPanelSettingsSizing"))); // NOI18N
@@ -2674,7 +2695,7 @@ public class ConsoleGUI extends javax.swing.JFrame implements CommandStateListen
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanelTMEX, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane8, javax.swing.GroupLayout.DEFAULT_SIZE, 87, Short.MAX_VALUE)
+                .addComponent(jScrollPane8, javax.swing.GroupLayout.DEFAULT_SIZE, 52, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -3870,11 +3891,14 @@ public class ConsoleGUI extends javax.swing.JFrame implements CommandStateListen
 
     private void jMenuItemSetMoneyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemSetMoneyActionPerformed
         var bundle = java.util.ResourceBundle.getBundle("ConsoleGUI");
+        var useQueries = ConsoleGUI.settings.useNonEssentialQueries();
         
         int funds = 0;
-        var response = this.executeQuery("HOUSEHOLD FUNDS");
-        if (response != null)
-            funds = Integer.parseInt(response.replace("MESSAGE: INFO: FUNDS: ", ""));
+        if (useQueries) {
+            var response = this.executeQuery("HOUSEHOLD FUNDS");
+            if (response != null)
+                funds = Integer.parseInt(response.replace("MESSAGE: INFO: FUNDS: ", ""));
+        }
         
         var model = (javax.swing.SpinnerNumberModel) this.jSpinnerMoneyChooser.getModel();
         model.setMaximum(9999999);
@@ -3893,11 +3917,14 @@ public class ConsoleGUI extends javax.swing.JFrame implements CommandStateListen
 
     private void jMenuItemDepositMoneyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemDepositMoneyActionPerformed
         var bundle = java.util.ResourceBundle.getBundle("ConsoleGUI");
+        var useQueries = ConsoleGUI.settings.useNonEssentialQueries();
         
         int funds = 0;
-        var response = this.executeQuery("HOUSEHOLD FUNDS");
-        if (response != null)
-            funds = Integer.parseInt(response.replace("MESSAGE: INFO: FUNDS: ", ""));
+        if (useQueries) {
+            var response = this.executeQuery("HOUSEHOLD FUNDS");
+            if (response != null)
+                funds = Integer.parseInt(response.replace("MESSAGE: INFO: FUNDS: ", ""));
+        }
         
         var model = (javax.swing.SpinnerNumberModel) this.jSpinnerMoneyChooser.getModel();
         model.setMaximum(9999999 - funds);
@@ -3917,11 +3944,14 @@ public class ConsoleGUI extends javax.swing.JFrame implements CommandStateListen
 
     private void jMenuItemWithdrawMoneyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemWithdrawMoneyActionPerformed
         var bundle = java.util.ResourceBundle.getBundle("ConsoleGUI");
+        var useQueries = ConsoleGUI.settings.useNonEssentialQueries();
         
         int funds = 0;
-        var response = this.executeQuery("HOUSEHOLD FUNDS");
-        if (response != null)
-            funds = Integer.parseInt(response.replace("MESSAGE: INFO: FUNDS: ", ""));
+        if (useQueries) {
+            var response = this.executeQuery("HOUSEHOLD FUNDS");
+            if (response != null)
+                funds = Integer.parseInt(response.replace("MESSAGE: INFO: FUNDS: ", ""));
+        }
         
         var model = (javax.swing.SpinnerNumberModel) this.jSpinnerMoneyChooser.getModel();
         model.setMaximum(funds);
@@ -4100,6 +4130,11 @@ public class ConsoleGUI extends javax.swing.JFrame implements CommandStateListen
             this.jTextFieldMaxTimeOut.requestFocus();
     }//GEN-LAST:event_jTextFieldMaxTimeOutKeyReleased
 
+    private void jCheckBoxSettingsUSeNonEssentialQueriesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxSettingsUSeNonEssentialQueriesActionPerformed
+        this.currentSettings.useNonEssentialQueries(this.jCheckBoxSettingsUSeNonEssentialQueries.isSelected());
+        this.determineIfSettingsChanged();
+    }//GEN-LAST:event_jCheckBoxSettingsUSeNonEssentialQueriesActionPerformed
+
     private void jComboBoxRelationshipMainSimActionPerformed(java.awt.event.ActionEvent evt) {                                                             
         this.populateSimsList();
     }
@@ -4136,27 +4171,51 @@ public class ConsoleGUI extends javax.swing.JFrame implements CommandStateListen
     
     private String executeQuery(String query) {
         var bundle = java.util.ResourceBundle.getBundle("ConsoleGUI");
-
-        this.jLabelCommandStatus.setText(bundle.getString("jLabelCommandStatusQuerying"));
-        this.jProgressBarStatus.setVisible(true);
-        this.jSeparator1.setVisible(true);
+        var executor = Executors.newSingleThreadScheduledExecutor();
+        var timeout = ConsoleGUI.settings.maxTimeout;
         
-        this.connData.out.format("QUERY: %s\n", query);
-        this.connData.out.flush();
+        var value = executor.submit(() -> {
+            var that = ConsoleGUI.this;
+            
+            that.connData.out.format("QUERY: %s\n", query);
+            that.connData.out.flush();
+            
+            try {
+                return that.connData.in.readLine();
+            } catch (IOException ex) {
+                return null;
+            }
+        });
+        
+        executor.shutdown();
         
         try {
-            var result = this.connData.in.readLine();
-            this.jLabelCommandStatus.setText(bundle.getString("jLabelCommandStatusDone"));
-
+            this.jLabelCommandStatus.setText(bundle.getString("jLabelCommandStatusQuerying"));
+            this.jProgressBarStatus.setVisible(true);
+            this.jSeparator1.setVisible(true);
+            
+            var result = timeout == -1 ? value.get() : value.get(timeout, TimeUnit.MILLISECONDS);
+            if (result != null) {
+                this.jLabelCommandStatus.setText(bundle.getString("jLabelCommandStatusDone"));
+            }
+            else {
+                this.jLabelCommandStatus.setText(bundle.getString("jLabelCommandStatusFailed"));
+            }
+            
             return result;
-        } catch (IOException ex) {
-            Logger.getLogger(ConsoleGUI.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InterruptedException | ExecutionException ex) {
+            Logger.getLogger(ConsoleGUI.class.getName()).log(Level.WARNING, null, ex);
             this.jLabelCommandStatus.setText(bundle.getString("jLabelCommandStatusFailed"));
-        } finally {
+        }
+        catch (TimeoutException ex) {
+            value.cancel(true);
+            this.jLabelCommandStatus.setText(bundle.getString("jLabelCommandStatusTimedOut"));
+        }
+        finally {
             this.jProgressBarStatus.setVisible(false);
             this.jSeparator1.setVisible(false);
         }
-
+        
         return null;
     }
 
@@ -4200,7 +4259,7 @@ public class ConsoleGUI extends javax.swing.JFrame implements CommandStateListen
         }
         catch (TimeoutException ex) {
             value.cancel(true);
-            javax.swing.JOptionPane.showMessageDialog(this, 
+            javax.swing.JOptionPane.showMessageDialog(null, 
                     bundle.getString("ExecutionTimedOutMessage"),
                     bundle.getString("ExecutionTimedOutTitle"),
                     javax.swing.JOptionPane.ERROR_MESSAGE);
@@ -4415,6 +4474,7 @@ public class ConsoleGUI extends javax.swing.JFrame implements CommandStateListen
     private javax.swing.JCheckBox jCheckBoxSettingsOpenAtReady;
     private javax.swing.JCheckBox jCheckBoxSettingsSaveWindowSize;
     private javax.swing.JCheckBox jCheckBoxSettingsShift;
+    private javax.swing.JCheckBox jCheckBoxSettingsUSeNonEssentialQueries;
     private javax.swing.JCheckBox jCheckBoxSettingsUseMaxTimeout;
     private javax.swing.JCheckBox jCheckBoxTMEX;
     private javax.swing.JComboBox<SimItem> jComboBoxRelationshipMainSim;
@@ -4545,6 +4605,7 @@ public class ConsoleGUI extends javax.swing.JFrame implements CommandStateListen
     private javax.swing.JPopupMenu.Separator jSeparator13;
     private javax.swing.JPopupMenu.Separator jSeparator14;
     private javax.swing.JPopupMenu.Separator jSeparator15;
+    private javax.swing.JSeparator jSeparator16;
     private javax.swing.JToolBar.Separator jSeparator2;
     private javax.swing.JToolBar.Separator jSeparator3;
     private javax.swing.JPopupMenu.Separator jSeparator4;
